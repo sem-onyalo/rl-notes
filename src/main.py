@@ -40,11 +40,6 @@ class StudentMDP:
             }
         }
 
-        logging.info(self.states)
-        logging.info(self.actions)
-        logging.info(self.state_actions)
-        logging.info(self.action_probabilities)
-
     def get_state_action_result(self, state, action):
         """
         Gets the result of the specified action when in the specified state.
@@ -76,8 +71,6 @@ class ValueFunctionTabular:
     def __init__(self, states):
         self.state_values = { x: 0. for x in states }
 
-        logging.info(self.state_values)
-
     def __str__(self):
         return str(self.state_values)
 
@@ -90,7 +83,10 @@ class ValueFunctionTabular:
     def update_values(self, state_values):
         self.state_values = state_values
 
-class ValueIterationDP:
+    def get_values(self):
+        return self.state_values
+
+class ValueIteration:
     """
     This class represents the dynamic programming value iteration algorithm.
     """
@@ -102,20 +98,21 @@ class ValueIterationDP:
         self.delta_threshold = delta_threshold
         self.max_iterations = max_iterations
 
-        logging.info(self.value_function)
-        logging.info(self.discount_rate)
-        logging.info(self.delta_threshold)
-
     def run(self):
         current_delta = 0
-        for _ in range(self.max_iterations):
+        logging.info(f"0, {self.value_function.get_value()}, {current_delta}")
+
+        for i in range(self.max_iterations):
             value = self.value_function.get_value()
             new_state_values = self.update_state_values()
             self.value_function.update_values(new_state_values)
             current_delta = abs(value - self.value_function.get_value())
-            logging.info(f"value function: {self.value_function}, delta: {current_delta}")
+
+            logging.info(f"{i + 1}, {value}, {current_delta}")
+            logging.debug(f"value function: {self.value_function}, delta: {current_delta}")
+
             if current_delta < self.delta_threshold:
-                logging.info("delta threshold reached, exiting algorithm")
+                logging.info("threshold reached, exiting algorithm")
                 break
 
         return self.value_function
@@ -178,7 +175,7 @@ def get_runtime_args():
 def main(args):
     mdp = StudentMDP()
     value_function = ValueFunctionTabular(mdp.states)
-    algorithm = ValueIterationDP(mdp, value_function, args.discount_rate, args.delta_threshold)
+    algorithm = ValueIteration(mdp, value_function, args.discount_rate, args.delta_threshold)
     algorithm.run()
 
 if __name__ == "__main__":
