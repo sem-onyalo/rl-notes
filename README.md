@@ -22,7 +22,11 @@ python -m unittest
 
 ### Value Iteration
 
-Implementing the value iteration algorithm on the student MDP example.
+Implementing the value iteration algorithm on the [student MDP example](#student-mdp).
+
+![optimal value iteration](./docs/algorithm-optimal-value-iteration.png)
+
+![backup diagram value iteration](./docs/backup-diagram-value-iteration.png)
 
 #### Test Value Iteration
 
