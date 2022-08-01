@@ -1,15 +1,16 @@
 import unittest
 
+from src.main import StudentMDP
 from src.main import ValueFunctionTabular
 
 class TestValueFunctionTabular(unittest.TestCase):
     def setUp(self):
-        self.states = list(range(5))
-        self.value_function = ValueFunctionTabular(self.states)
+        mdp = StudentMDP()
+        self.value_function = ValueFunctionTabular(mdp)
 
     def test_state_values_init(self):
         expected = { 0: 0., 1: 0., 2: 0., 3: 0., 4: 0. }
-        actual = self.value_function.state_values
+        actual = self.value_function.get_values()
         self.assertDictEqual(expected, actual)
 
     def test_state_values_str(self):

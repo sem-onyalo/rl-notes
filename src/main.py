@@ -1,5 +1,7 @@
 import argparse
 import logging
+import random
+from statistics import mean
 
 class StudentMDP:
     """
@@ -9,6 +11,7 @@ class StudentMDP:
     def __init__(self):
         self.states = list(range(5)) # TikTok, Class1, Class2, Class3, End
         self.actions = list(range(5)) # TikTok, Quit, Study, Sleep, Pub
+        self.terminal_state = 4
 
         self.state_actions = {
             # schema: { state: { action: (reward, [next_state]) } }
@@ -40,7 +43,41 @@ class StudentMDP:
             }
         }
 
+    def __getitem__(self, i):
+        return self.state_actions[i]
+
+    def is_terminal_state(self, state):
+        return state == self.terminal_state
+
+    def get_initial_state(self):
+        return 0
+
+    def get_state_actions(self):
+        return self.state_actions
+
+    def get_reward_and_next_state(self, state, action):
+        if self.is_terminal_state(state):
+            is_terminal_state = True
+            next_state = state
+            reward = 0
+        else:
+            is_terminal_state = False
+            reward, next_states = self.state_actions[state][action]
+            if len(next_states) > 1:
+                probability_total = 0
+                probability_value = random.random()
+                for possible_next_state in self.action_probabilities[state]:
+                    probability_total += self.action_probabilities[state][possible_next_state]
+                    if probability_value < probability_total:
+                        next_state = possible_next_state
+                        break
+            else:
+                next_state = next_states[0]
+
+        return reward, next_state, is_terminal_state
+
     def get_state_action_result(self, state, action):
+        # TODO: change function description to something like "get_reward_and_next_states"
         """
         Gets the result of the specified action when in the specified state.
         :returns: reward, next_states, is_terminal_state OR None if state-action pair DNE.
@@ -63,13 +100,51 @@ class StudentMDP:
         else:
             return 1 # if probability isn't explicitly set then always take that action (i.e. act greedily)
 
-class ValueFunctionTabular:
+class ActionValueFunctionTabular:
     """
-    This class represents a tabular value function with initial values of zero.
+    This class represents a tabular action-value function, i.e. Q(s,a), with initial values of zero.
     """
 
-    def __init__(self, states):
-        self.state_values = { x: 0. for x in states }
+    def __init__(self, mdp):
+        self.state_action_values = {
+            state: {
+                action: 0.
+                for action in mdp[state]
+            } if mdp[state] != None else 0. for state in mdp.get_state_actions()
+        }
+
+    def __str__(self):
+        return str(self.state_action_values)
+
+    def __call__(self, state, action):
+        return self.state_action_values[state][action]
+
+    def get_values(self):
+        return self.state_action_values
+
+    def update_value(self, state, action, value):
+        self.state_action_values[state][action] = value
+
+    def get_optimal_action(self, state):
+        optimal_action = None
+        max_value = 0.
+        for action in self.state_action_values[state]:
+            if optimal_action == None or self.state_action_values[state][action] > max_value:
+                optimal_action = action
+                max_value = self.state_action_values[state][action]
+
+        return optimal_action
+
+class ValueFunctionTabular:
+    """
+    This class represents a tabular value function, i.e. V(s), with initial values of zero.
+    """
+
+    def __init__(self, mdp):
+        self.state_values = {
+            state: 0.
+            for state in mdp.get_state_actions()
+        }
 
     def __str__(self):
         return str(self.state_values)
@@ -85,6 +160,134 @@ class ValueFunctionTabular:
 
     def get_values(self):
         return self.state_values
+
+class Policy:
+    """
+    This class represents a policy to be followed (i.e. for every state what action should be taken) with the caveat
+    that in some cases the action will be random (i.e. exploratory)
+    """
+
+    def __init__(self, mdp, epsilon_probability):
+        """
+        Initializes a new policy.
+        :param MDP mdp: The MDP in which to execute this policy.
+        :param float epsilon_probability: The probability in which to take a random action (i.e. explore).
+        If 0.0 then never explore (i.e. act greedily). If 1.0 then always explore.
+        """
+        self.mdp = mdp
+        self.policy = { state: None for state in mdp.get_state_actions() }
+        self.epsilon = epsilon_probability
+
+    def __str__(self):
+        return str(self.policy)
+
+    def __call__(self):
+        return self.policy
+
+    def update_epsilon(self, value):
+        self.epsilon = value
+
+    def get_action(self, state):
+        do_explore = random.random() < self.epsilon
+        if self.policy[state] == None or do_explore:
+            # pick a random action from the possible actions in the specified state
+            actions = self.mdp[state]
+            if actions != None:
+                actions = list(self.mdp[state].keys())
+                action_idx = random.randint(0, len(actions) - 1)
+                return actions[action_idx]
+            return 0 # return any action for terminal state
+        else:
+            # pick the optimal action
+            return self.policy[state]
+
+    def update_policy(self, state, action):
+        self.policy[state] = action
+
+class MonteCarlo:
+    """
+    This class represents the first-visit Monte Carlo exploring starts control (policy optimization) algorithm.
+    """
+
+    def __init__(self, mdp, action_value_function, discount_rate, policy, max_episodes=100):
+        self.mdp = mdp
+        self.action_value_function = action_value_function
+        self.discount_rate = discount_rate
+        self.policy = policy
+        self.max_episodes = max_episodes
+
+    def run(self):
+        total_visits = {
+            state: {
+                action: 0
+                for action in self.mdp[state]
+            } if self.mdp[state] != None else None for state in self.mdp.get_state_actions()
+        }
+
+        for i in range(1, self.max_episodes + 1):
+            logging.info(f"Episode {i}")
+            logging.info("-" * 50)
+
+            episode_visit = {
+                state: {
+                    action: False
+                    for action in self.mdp[state]
+                } if self.mdp[state] != None else None for state in self.mdp.get_state_actions()
+            }
+
+            returns = {
+                state: {
+                    action: 0.
+                    for action in self.mdp[state]
+                } if self.mdp[state] != None else None for state in self.mdp.get_state_actions()
+            }
+
+            path = list()
+            is_terminal = False
+            state = self.mdp.get_initial_state()
+            while not is_terminal:
+                action = self.policy.get_action(state)
+                reward, next_state, is_terminal = self.mdp.get_reward_and_next_state(state, action)
+
+                if total_visits[state] != None:
+                    total_visits[state][action] += 1
+
+                if episode_visit[state] != None and not episode_visit[state][action]:
+                    episode_visit[state][action] = True
+
+                # update the total rewards for all the state-action pairs that have been taken in this episode
+                for state_visited in returns:
+                    if returns[state_visited] != None:
+                        for action_taken in returns[state_visited]:
+                            if episode_visit[state_visited][action_taken]:
+                                # calculate the sum of all discounted rewards (i.e. G = y * G + R[t+1])
+                                total_reward = self.discount_rate * returns[state_visited][action_taken] + reward
+
+                                # calculate the incremental mean of the action-value function
+                                # (i.e. Q(S,A) = Q(S,A) + 1/N(S,A) * (Gt - Q(S,A)))
+                                current_value = self.action_value_function(state_visited, action_taken)
+                                visit_count = total_visits[state_visited][action_taken]
+                                new_value = current_value + (1/visit_count * (total_reward - current_value))
+                                returns[state_visited][action_taken] = round(new_value, 1)
+                                self.action_value_function.update_value(state_visited, action_taken, new_value)
+
+                path.append(state)
+                state = next_state
+
+            # update policy
+            self.policy.update_epsilon(1/i)
+            for state in self.mdp.get_state_actions():
+                if not self.mdp.is_terminal_state(state):
+                    optimal_action = self.action_value_function.get_optimal_action(state)
+                    self.policy.update_policy(state, optimal_action)
+
+            logging.debug(f"{path}")
+            logging.debug(f"{total_visits}")
+            logging.debug(f"{returns}")
+            logging.info(f"{self.action_value_function}")
+            logging.info("")
+
+        return self.action_value_function, self.policy()
 
 class ValueIteration:
     """
@@ -115,6 +318,7 @@ class ValueIteration:
                 logging.info("threshold reached, exiting algorithm")
                 break
 
+        # TODO: build policy from value function and return it as 0th tuple element
         return self.value_function
 
     def update_state_values(self):
@@ -174,7 +378,7 @@ def get_runtime_args():
 
 def main(args):
     mdp = StudentMDP()
-    value_function = ValueFunctionTabular(mdp.states)
+    value_function = ValueFunctionTabular(mdp)
     algorithm = ValueIteration(mdp, value_function, args.discount_rate, args.delta_threshold)
     algorithm.run()
 
