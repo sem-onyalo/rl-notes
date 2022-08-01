@@ -32,4 +32,8 @@ class TestMonteCarlo(unittest.TestCase):
         self.algorithm.max_episodes = 100
         function, policy = self.algorithm.run()
         self.assertDictEqual(expected, policy)
+        self.assertEqual(10, function(3, 2))
+        self.assertAlmostEqual(8, function(2, 2), delta=1.)
+        self.assertAlmostEqual(6, function(1, 2), delta=2.)
+        self.assertAlmostEqual(6, function(0, 1), delta=3.)
 
