@@ -209,12 +209,13 @@ class MonteCarlo:
     This class represents the first-visit Monte Carlo exploring starts control (policy optimization) algorithm.
     """
 
-    def __init__(self, mdp, action_value_function, discount_rate, policy, max_episodes=100):
+    def __init__(self, mdp, action_value_function, discount_rate, policy, max_episodes=100, update_epsilon=True):
         self.mdp = mdp
         self.action_value_function = action_value_function
         self.discount_rate = discount_rate
         self.policy = policy
         self.max_episodes = max_episodes
+        self.update_epsilon = update_epsilon
 
     def run(self):
         total_visits = {
@@ -273,7 +274,9 @@ class MonteCarlo:
                 state = next_state
 
             # update policy
-            self.policy.update_epsilon(1/i)
+            if self.update_epsilon:
+                self.policy.update_epsilon(1/i)
+
             for state in self.mdp.get_state_actions():
                 if not self.mdp.is_terminal_state(state):
                     optimal_action = self.action_value_function.get_optimal_action(state)
