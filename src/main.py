@@ -31,7 +31,13 @@ class StudentMDP:
                 2: (10, [4]),
                 4: ( 1, [1, 2, 3])
             },
-            4: None # terminal state
+            4: {
+                0: (0, [4]),
+                1: (0, [4]),
+                2: (0, [4]),
+                3: (0, [4]),
+                4: (0, [4]),
+            } # terminal state, i.e. all actions give zero rewards result to being in the same state
         }
 
         self.action_probabilities = {
@@ -76,18 +82,15 @@ class StudentMDP:
 
         return reward, next_state, is_terminal_state
 
-    def get_state_action_result(self, state, action):
+    def get_reward_and_next_states(self, state, action):
         # TODO: change function description to something like "get_reward_and_next_states"
         """
         Gets the result of the specified action when in the specified state.
         :returns: reward, next_states, is_terminal_state OR None if state-action pair DNE.
         """
-        if state in self.state_actions:
-            if self.state_actions[state] == None:
-                return None, None, True
-            elif action in self.state_actions[state]:
-                reward, next_states = self.state_actions[state][action]
-                return reward, next_states, False
+        if state in self.state_actions and action in self.state_actions[state]:
+            reward, next_states = self.state_actions[state][action]
+            return reward, next_states, self.is_terminal_state(state)
 
         return None
 
@@ -110,7 +113,7 @@ class ActionValueFunctionTabular:
             state: {
                 action: 0.
                 for action in mdp[state]
-            } if mdp[state] != None else 0. for state in mdp.get_state_actions()
+            } for state in mdp.get_state_actions()
         }
 
     def __str__(self):
@@ -191,12 +194,9 @@ class Policy:
         do_explore = random.random() < self.epsilon
         if self.policy[state] == None or do_explore:
             # pick a random action from the possible actions in the specified state
-            actions = self.mdp[state]
-            if actions != None:
-                actions = list(self.mdp[state].keys())
-                action_idx = random.randint(0, len(actions) - 1)
-                return actions[action_idx]
-            return 0 # return any action for terminal state
+            actions = list(self.mdp[state].keys())
+            action_idx = random.randint(0, len(actions) - 1)
+            return actions[action_idx]
         else:
             # pick the optimal action
             return self.policy[state]
@@ -221,7 +221,7 @@ class MonteCarlo:
             state: {
                 action: 0
                 for action in self.mdp[state]
-            } if self.mdp[state] != None else None for state in self.mdp.get_state_actions()
+            } for state in self.mdp.get_state_actions()
         }
 
         for i in range(1, self.max_episodes + 1):
@@ -232,14 +232,14 @@ class MonteCarlo:
                 state: {
                     action: False
                     for action in self.mdp[state]
-                } if self.mdp[state] != None else None for state in self.mdp.get_state_actions()
+                } for state in self.mdp.get_state_actions()
             }
 
             returns = {
                 state: {
                     action: 0.
                     for action in self.mdp[state]
-                } if self.mdp[state] != None else None for state in self.mdp.get_state_actions()
+                } for state in self.mdp.get_state_actions()
             }
 
             path = list()
@@ -248,11 +248,9 @@ class MonteCarlo:
             while not is_terminal:
                 action = self.policy.get_action(state)
                 reward, next_state, is_terminal = self.mdp.get_reward_and_next_state(state, action)
+                total_visits[state][action] += 1
 
-                if total_visits[state] != None:
-                    total_visits[state][action] += 1
-
-                if episode_visit[state] != None and not episode_visit[state][action]:
+                if not episode_visit[state][action]:
                     episode_visit[state][action] = True
 
                 # update the total rewards for all the state-action pairs that have been taken in this episode
@@ -334,7 +332,7 @@ class ValueIteration:
             state_action_results = list()
 
             for action in self.mdp.actions:
-                result = self.mdp.get_state_action_result(state, action)
+                result = self.mdp.get_reward_and_next_states(state, action)
                 if result != None:
                     reward, next_states, is_terminal = result
                     if not is_terminal:

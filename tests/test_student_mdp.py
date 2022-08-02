@@ -16,11 +16,11 @@ class TestStudentMDP(unittest.TestCase):
 
     def test_state_actions_init(self):
         expected = { 
-            0: { 0: (-1, [0]), 1: (0, [1]) }, 
+            0: { 0: (-1, [0]), 1: ( 0, [1]) }, 
             1: { 0: (-1, [0]), 2: (-2, [2]) }, 
-            2: { 2: (-2, [3]), 3: (0, [4]) }, 
-            3: { 2: (10, [4]), 4: (1, [1, 2, 3]) }, 
-            4: None 
+            2: { 2: (-2, [3]), 3: ( 0, [4]) }, 
+            3: { 2: (10, [4]), 4: ( 1, [1, 2, 3]) }, 
+            4: { 0: ( 0, [4]), 1: ( 0, [4]), 2: ( 0, [4]), 3: ( 0, [4]), 4: (0, [4]) }
         }
         self.assertDictEqual(expected, self.mdp.state_actions)
 
@@ -30,11 +30,11 @@ class TestStudentMDP(unittest.TestCase):
 
     def test_getitem(self):
         expected = { 
-            0: { 0: (-1, [0]), 1: (0, [1]) }, 
+            0: { 0: (-1, [0]), 1: ( 0, [1]) }, 
             1: { 0: (-1, [0]), 2: (-2, [2]) }, 
-            2: { 2: (-2, [3]), 3: (0, [4]) }, 
-            3: { 2: (10, [4]), 4: (1, [1, 2, 3]) }, 
-            4: None 
+            2: { 2: (-2, [3]), 3: ( 0, [4]) }, 
+            3: { 2: (10, [4]), 4: ( 1, [1, 2, 3]) }, 
+            4: { 0: ( 0, [4]), 1: ( 0, [4]), 2: ( 0, [4]), 3: ( 0, [4]), 4: (0, [4]) } 
         }
 
         self.assertDictEqual(expected[0], self.mdp[0])
@@ -79,19 +79,20 @@ class TestStudentMDP(unittest.TestCase):
         self.assertTrue(3 in actuals)
         self.assertListEqual(expected_actions, actuals)
 
-    def test_get_state_action_result(self):
+    def test_get_reward_and_next_states(self):
         expected = (-1, [0], False)
-        actual = self.mdp.get_state_action_result(0, 0)
+        actual = self.mdp.get_reward_and_next_states(0, 0)
         self.assertTupleEqual(expected, actual)
 
-    def test_get_state_action_result_terminal(self):
-        expected = (None, None, True)
-        actual = self.mdp.get_state_action_result(4, 0)
+    def test_get_reward_and_next_states_terminal(self):
+        terminal_state = 4
+        expected = (0, [terminal_state], True)
+        actual = self.mdp.get_reward_and_next_states(terminal_state, 0)
         self.assertTupleEqual(expected, actual)
 
-    def test_get_state_action_result_invalid_action(self):
+    def test_get_reward_and_next_states_invalid_action(self):
         expected = None
-        actual = self.mdp.get_state_action_result(0, 2)
+        actual = self.mdp.get_reward_and_next_states(0, 2)
         self.assertEqual(expected, actual)
 
     def test_get_action_probability(self):

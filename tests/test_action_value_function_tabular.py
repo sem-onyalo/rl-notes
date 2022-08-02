@@ -9,12 +9,24 @@ class TestActionValueFunctionTabular(unittest.TestCase):
         self.action_value_function = ActionValueFunctionTabular(mdp)
 
     def test_state_action_values_init(self):
-        expected = { 0: { 0: 0., 1: 0. }, 1: { 0: 0., 2: 0. }, 2: { 2: 0., 3: 0. }, 3: { 2: 0., 4: 0. }, 4: 0. }
+        expected = { 
+            0: { 0: 0., 1: 0. }, 
+            1: { 0: 0., 2: 0. }, 
+            2: { 2: 0., 3: 0. }, 
+            3: { 2: 0., 4: 0. }, 
+            4: { 0: 0., 1: 0., 2: 0., 3: 0., 4: 0. } 
+        }
         actual = self.action_value_function.get_values()
         self.assertDictEqual(expected, actual)
 
     def test_state_action_values_str(self):
-        expected = str({ 0: { 0: 0., 1: 0. }, 1: { 0: 0., 2: 0. }, 2: { 2: 0., 3: 0. }, 3: { 2: 0., 4: 0. }, 4: 0. })
+        expected = str({ 
+            0: { 0: 0., 1: 0. }, 
+            1: { 0: 0., 2: 0. }, 
+            2: { 2: 0., 3: 0. }, 
+            3: { 2: 0., 4: 0. }, 
+            4: { 0: 0., 1: 0., 2: 0., 3: 0., 4: 0. } 
+        })
         actual = str(self.action_value_function)
         self.assertEqual(expected, actual)
 
