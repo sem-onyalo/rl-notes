@@ -2,16 +2,6 @@
 
 My notes for learning RL.
 
-## Setup
-
-```
-python -m venv env
-
-.\env\Scripts\activate
-
-pip install -r requirements.txt
-```
-
 ## Test
 
 ```
