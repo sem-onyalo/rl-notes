@@ -1,12 +1,12 @@
 import unittest
 
-from src.main import ActionValueFunctionTabular
-from src.main import AlgorithmCreator
-from src.main import MonteCarlo
-from src.main import Policy
-from src.main import StudentMDP
-from src.main import ValueFunctionTabular
-from src.main import ValueIteration
+from src.algorithm.monte_carlo import MonteCarlo
+from src.algorithm.policy import Policy
+from src.algorithm.value_iteration import ValueIteration
+from src.algorithm_creator import AlgorithmCreator
+from src.function.action_value_function_tabular import ActionValueFunctionTabular
+from src.function.value_function_tabular import ValueFunctionTabular
+from src.mdp.student_mdp import StudentMDP
 
 class RuntimeArgs:
     pass

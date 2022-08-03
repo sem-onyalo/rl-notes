@@ -1,7 +1,7 @@
 import unittest
 
-from src.main import Policy
-from src.main import StudentMDP
+from src.algorithm.policy import Policy
+from src.mdp.student_mdp import StudentMDP
 
 class TestPolicy(unittest.TestCase):
     def setUp(self):

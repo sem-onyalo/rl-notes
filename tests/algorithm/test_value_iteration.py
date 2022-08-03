@@ -1,8 +1,8 @@
 import unittest
 
-from src.main import StudentMDP
-from src.main import ValueFunctionTabular
-from src.main import ValueIteration
+from src.algorithm.value_iteration import ValueIteration
+from src.function.value_function_tabular import ValueFunctionTabular
+from src.mdp.student_mdp import StudentMDP
 
 class TestValueIteration(unittest.TestCase):
     def setUp(self):
