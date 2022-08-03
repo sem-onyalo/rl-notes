@@ -8,20 +8,24 @@ class TestValueFunctionTabular(unittest.TestCase):
         mdp = StudentMDP()
         self.value_function = ValueFunctionTabular(mdp)
 
-    def test_state_values_init(self):
-        expected = { 0: 0., 1: 0., 2: 0., 3: 0., 4: 0. }
-        actual = self.value_function.get_values()
-        self.assertDictEqual(expected, actual)
-
-    def test_state_values_str(self):
+    def test_str(self):
         expected = str({ 0: 0., 1: 0., 2: 0., 3: 0., 4: 0. })
         actual = str(self.value_function)
         self.assertEqual(expected, actual)
 
-    def test_state_values_call(self):
+    def test_eq(self):
+        other = ValueFunctionTabular(StudentMDP())
+        self.assertTrue(self.value_function == other)
+
+    def test_call(self):
         expected = 0.
         actual = self.value_function(3)
         self.assertEqual(expected, actual)
+
+    def test_state_values_init(self):
+        expected = { 0: 0., 1: 0., 2: 0., 3: 0., 4: 0. }
+        actual = self.value_function.get_values()
+        self.assertDictEqual(expected, actual)
 
     def test_update_values(self):
         expected = { 0: 0., 1: 1., 2: 1., 3: 2., 4: 3. }

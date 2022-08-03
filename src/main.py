@@ -49,6 +49,18 @@ class StudentMDP:
             }
         }
 
+    def __eq__(self, other):
+        if other != None:
+            return (
+                self.states == other.states
+                and self.actions == other.actions
+                and self.terminal_state == other.terminal_state
+                and self.state_actions == other.state_actions
+                and self.action_probabilities == other.action_probabilities
+            )
+
+        return False
+
     def __getitem__(self, i):
         return self.state_actions[i]
 
@@ -119,6 +131,12 @@ class ActionValueFunctionTabular:
     def __str__(self):
         return str(self.state_action_values)
 
+    def __eq__(self, other):
+        if other != None:
+            return self.state_action_values == other.get_values()
+
+        return False
+
     def __call__(self, state, action):
         return self.state_action_values[state][action]
 
@@ -152,6 +170,12 @@ class ValueFunctionTabular:
     def __str__(self):
         return str(self.state_values)
 
+    def __eq__(self, other):
+        if other != None:
+            return self.state_values == other.get_values()
+
+        return False
+
     def __call__(self, state):
         return self.state_values[state]
 
@@ -167,7 +191,7 @@ class ValueFunctionTabular:
 class Policy:
     """
     This class represents a policy to be followed (i.e. for every state what action should be taken) with the caveat
-    that in some cases the action will be random (i.e. exploratory)
+    that in some cases the action will be random (i.e. exploratory).
     """
 
     def __init__(self, mdp, epsilon_probability):
@@ -183,6 +207,12 @@ class Policy:
 
     def __str__(self):
         return str(self.policy)
+
+    def __eq__(self, other):
+        if other != None:
+            return self.policy == other()
+
+        return False
 
     def __call__(self):
         return self.policy
@@ -209,13 +239,25 @@ class MonteCarlo:
     This class represents the first-visit Monte Carlo exploring starts control (policy optimization) algorithm.
     """
 
-    def __init__(self, mdp, action_value_function, discount_rate, policy, max_episodes=100, update_epsilon=True):
+    def __init__(self, mdp, function, policy, discount_rate, max_episodes=100, do_glie=True):
         self.mdp = mdp
-        self.action_value_function = action_value_function
-        self.discount_rate = discount_rate
+        self.function = function
         self.policy = policy
+        self.discount_rate = discount_rate
         self.max_episodes = max_episodes
-        self.update_epsilon = update_epsilon
+        self.do_glie = do_glie
+
+    def __eq__(self, other):
+        if other != None:
+            return (
+                self.mdp == other.mdp
+                and self.function == other.function
+                and self.policy == other.policy
+                and self.discount_rate == other.discount_rate
+                and self.max_episodes == other.max_episodes
+                and self.do_glie == other.do_glie)
+
+        return False
 
     def run(self):
         total_visits = {
@@ -264,63 +306,75 @@ class MonteCarlo:
 
                                 # calculate the incremental mean of the action-value function
                                 # (i.e. Q(S,A) = Q(S,A) + 1/N(S,A) * (Gt - Q(S,A)))
-                                current_value = self.action_value_function(state_visited, action_taken)
+                                current_value = self.function(state_visited, action_taken)
                                 visit_count = total_visits[state_visited][action_taken]
                                 new_value = current_value + (1/visit_count * (total_reward - current_value))
                                 returns[state_visited][action_taken] = round(new_value, 1)
-                                self.action_value_function.update_value(state_visited, action_taken, new_value)
+                                self.function.update_value(state_visited, action_taken, new_value)
 
                 path.append(state)
                 state = next_state
 
             # update policy
-            if self.update_epsilon:
+            if self.do_glie:
                 self.policy.update_epsilon(1/i)
 
             for state in self.mdp.get_state_actions():
                 if not self.mdp.is_terminal_state(state):
-                    optimal_action = self.action_value_function.get_optimal_action(state)
+                    optimal_action = self.function.get_optimal_action(state)
                     self.policy.update_policy(state, optimal_action)
 
             logging.debug(f"{path}")
             logging.debug(f"{total_visits}")
             logging.debug(f"{returns}")
-            logging.info(f"{self.action_value_function}")
+            logging.info(f"{self.function}")
             logging.info("")
 
-        return self.action_value_function, self.policy()
+        return self.function, self.policy
 
 class ValueIteration:
     """
     This class represents the dynamic programming value iteration algorithm.
     """
 
-    def __init__(self, mdp, value_function, discount_rate, delta_threshold, max_iterations=100):
+    def __init__(self, mdp, function, discount_rate, delta_threshold, max_iterations=100):
         self.mdp = mdp
-        self.value_function = value_function
+        self.function = function
         self.discount_rate = discount_rate
         self.delta_threshold = delta_threshold
         self.max_iterations = max_iterations
 
+    def __eq__(self, other):
+        if other != None:
+            return (
+                self.mdp == other.mdp
+                and self.function == other.function
+                and self.discount_rate == other.discount_rate
+                and self.delta_threshold == other.delta_threshold
+                and self.max_iterations == other.max_iterations
+            )
+
+        return False
+
     def run(self):
         current_delta = 0
-        logging.info(f"0, {self.value_function.get_value()}, {current_delta}")
+        logging.info(f"0, {self.function.get_value()}, {current_delta}")
 
         for i in range(self.max_iterations):
-            value = self.value_function.get_value()
+            value = self.function.get_value()
             new_state_values = self.update_state_values()
-            self.value_function.update_values(new_state_values)
-            current_delta = abs(value - self.value_function.get_value())
+            self.function.update_values(new_state_values)
+            current_delta = abs(value - self.function.get_value())
 
             logging.info(f"{i + 1}, {value}, {current_delta}")
-            logging.debug(f"value function: {self.value_function}, delta: {current_delta}")
+            logging.debug(f"value function: {self.function}, delta: {current_delta}")
 
             if current_delta < self.delta_threshold:
                 logging.info("threshold reached, exiting algorithm")
                 break
 
         # TODO: build policy from value function and return it as 0th tuple element
-        return self.value_function
+        return self.function
 
     def update_state_values(self):
         """
@@ -350,7 +404,7 @@ class ValueIteration:
                 # i.e. v(s) = R + y * sum(P * v(s'))
                 value = reward + self.discount_rate * sum(
                     [
-                        self.mdp.get_action_probability(state, next_state) * self.value_function(next_state)
+                        self.mdp.get_action_probability(state, next_state) * self.function(next_state)
                         for next_state in next_states
                     ]) if reward != None else 0. # reward == None means a terminal state, so just store 0
                 logging.debug(f"state, action, reward, next states, value: {state}, {action}, {reward}, {next_states}, {value}")
@@ -364,6 +418,26 @@ class ValueIteration:
 
         return state_values
 
+class AlgorithmCreator:
+    """
+    This class represents a factory for building a specified algorithm.
+    """
+
+    @staticmethod
+    def build(algorithm_name, **kwargs):
+        mdp = StudentMDP()
+        if algorithm_name == "value-iteration":
+            function = ValueFunctionTabular(mdp)
+            algorithm = ValueIteration(mdp, function, kwargs["discount_rate"], kwargs["delta_threshold"])
+            return algorithm
+        elif algorithm_name == "monte-carlo":
+            function = ActionValueFunctionTabular(mdp)
+            policy = Policy(mdp, kwargs["epsilon"])
+            algorithm = MonteCarlo(mdp, function, policy, kwargs["discount_rate"], kwargs["max_episodes"], kwargs["do_glie"])
+            return algorithm
+        else:
+            raise Exception(f"The name '{algorithm_name}' is not a valid algorithm name.")
+
 def init_logger():
     logging.basicConfig(
         format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
@@ -373,8 +447,20 @@ def init_logger():
 
 def get_runtime_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--discount-rate", type=float, default=1.0, help="The discount-rate parameter.")
-    parser.add_argument("--delta-threshold", type=float, default=0.2, help="The delta threshold to stop the algorithm.")
+    subparser = parser.add_subparsers(dest="algorithm")
+
+    value_iteration_parser = subparser.add_parser("value-iteration", help="Value iteration DP algorithm.")
+    value_iteration_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
+    value_iteration_parser.add_argument("--delta-threshold", type=float, default=0.2, 
+        help="The delta of the total value of the value function between adjacent iterations at which to stop the algorithm.")
+
+    monte_carlo_parser = subparser.add_parser("monte-carlo", help="GLIE Monte-Carlo control algorithm.")
+    monte_carlo_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
+    monte_carlo_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
+    monte_carlo_parser.add_argument("--no_glie", action="store_false", help="Don't use GLIE policy improvement during run.")
+    monte_carlo_parser.add_argument("--epsilon", type=float, default=0.9, 
+        help="The epsilon value to use when implementing the epsilon-greedy policy. Ignored when using GLIE.")
+
     return parser.parse_args()
 
 def main(args):

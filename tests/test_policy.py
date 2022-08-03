@@ -9,7 +9,16 @@ class TestPolicy(unittest.TestCase):
         self.epsilon = 0.1
         self.policy = Policy(mdp, self.epsilon)
 
-    def test_policy_init(self):
+    def test_str(self):
+        expected = str({ 0: None, 1: None, 2: None, 3: None, 4: None })
+        actual = str(self.policy)
+        self.assertEqual(expected, actual)
+
+    def test_eq(self):
+        other = Policy(StudentMDP(), self.epsilon)
+        self.assertTrue(self.policy == other)
+
+    def test_call(self):
         expected = { 0: None, 1: None, 2: None, 3: None, 4: None }
         actual = self.policy()
         self.assertDictEqual(expected, actual)
@@ -17,11 +26,6 @@ class TestPolicy(unittest.TestCase):
     def test_epsilon_init(self):
         expected = self.epsilon
         actual = self.policy.epsilon
-        self.assertEqual(expected, actual)
-
-    def test_policy_str(self):
-        expected = str({ 0: None, 1: None, 2: None, 3: None, 4: None })
-        actual = str(self.policy)
         self.assertEqual(expected, actual)
 
     def test_update_epsilon(self):

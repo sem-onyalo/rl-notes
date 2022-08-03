@@ -7,10 +7,15 @@ from src.main import ValueIteration
 class TestValueIteration(unittest.TestCase):
     def setUp(self):
         mdp = StudentMDP()
-        value_function = ValueFunctionTabular(mdp)
+        function = ValueFunctionTabular(mdp)
         self.discount_rate = 1.
         self.delta_threshold = 0.2
-        self.algorithm = ValueIteration(mdp, value_function, self.discount_rate, self.delta_threshold)
+        self.algorithm = ValueIteration(mdp, function, self.discount_rate, self.delta_threshold)
+
+    def test_eq(self):
+        mdp = StudentMDP()
+        other = ValueIteration(mdp, ValueFunctionTabular(mdp), self.discount_rate, self.delta_threshold)
+        self.assertTrue(self.algorithm == other)
 
     def test_discount_rate_init(self):
         expected = self.discount_rate
