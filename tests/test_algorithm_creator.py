@@ -8,6 +8,9 @@ from src.main import StudentMDP
 from src.main import ValueFunctionTabular
 from src.main import ValueIteration
 
+class RuntimeArgs:
+    pass
+
 class TestAlgorithmCreator(unittest.TestCase):
     def test_invalid_algorithm_name(self):
         name = "not-a-valid-algorithm"
@@ -25,7 +28,11 @@ class TestAlgorithmCreator(unittest.TestCase):
             discount_rate=discount_rate,
             delta_threshold=delta_threshold)
 
-        actual = AlgorithmCreator.build("value-iteration", discount_rate=discount_rate, delta_threshold=delta_threshold)
+        args = RuntimeArgs()
+        args.discount_rate = discount_rate
+        args.delta_threshold = delta_threshold
+
+        actual = AlgorithmCreator.build("value-iteration", args)
         self.assertEqual(expected, actual)
 
     def test_monte_carlo(self):
@@ -39,6 +46,12 @@ class TestAlgorithmCreator(unittest.TestCase):
             policy=Policy(mdp, epsilon),
             discount_rate=discount_rate)
 
-        actual = AlgorithmCreator.build("monte-carlo", epsilon=epsilon, discount_rate=discount_rate, max_episodes=100, do_glie=True)
+        args = RuntimeArgs()
+        args.epsilon = epsilon
+        args.discount_rate = discount_rate
+        args.episodes = 100
+        args.no_glie = False
+
+        actual = AlgorithmCreator.build("monte-carlo", args)
         self.assertEqual(expected, actual)
 

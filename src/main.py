@@ -269,7 +269,6 @@ class MonteCarlo:
 
         for i in range(1, self.max_episodes + 1):
             logging.info(f"Episode {i}")
-            logging.info("-" * 50)
 
             episode_visit = {
                 state: {
@@ -324,12 +323,12 @@ class MonteCarlo:
                     optimal_action = self.function.get_optimal_action(state)
                     self.policy.update_policy(state, optimal_action)
 
-            logging.debug(f"{path}")
-            logging.debug(f"{total_visits}")
-            logging.debug(f"{returns}")
-            logging.info(f"{self.function}")
-            logging.info("")
+            logging.debug(f"path: {path}")
+            logging.debug(f"total visits: {total_visits}")
+            logging.debug(f"returns: {returns}")
+            logging.info(f"function: {self.function}")
 
+        logging.info(f"policy: {self.policy}")
         return self.function, self.policy
 
 class ValueIteration:
@@ -424,16 +423,16 @@ class AlgorithmCreator:
     """
 
     @staticmethod
-    def build(algorithm_name, **kwargs):
+    def build(algorithm_name, args):
         mdp = StudentMDP()
         if algorithm_name == "value-iteration":
             function = ValueFunctionTabular(mdp)
-            algorithm = ValueIteration(mdp, function, kwargs["discount_rate"], kwargs["delta_threshold"])
+            algorithm = ValueIteration(mdp, function, args.discount_rate, args.delta_threshold)
             return algorithm
         elif algorithm_name == "monte-carlo":
             function = ActionValueFunctionTabular(mdp)
-            policy = Policy(mdp, kwargs["epsilon"])
-            algorithm = MonteCarlo(mdp, function, policy, kwargs["discount_rate"], kwargs["max_episodes"], kwargs["do_glie"])
+            policy = Policy(mdp, args.epsilon)
+            algorithm = MonteCarlo(mdp, function, policy, args.discount_rate, args.episodes, (not args.no_glie))
             return algorithm
         else:
             raise Exception(f"The name '{algorithm_name}' is not a valid algorithm name.")
@@ -457,16 +456,14 @@ def get_runtime_args():
     monte_carlo_parser = subparser.add_parser("monte-carlo", help="GLIE Monte-Carlo control algorithm.")
     monte_carlo_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
     monte_carlo_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
-    monte_carlo_parser.add_argument("--no_glie", action="store_false", help="Don't use GLIE policy improvement during run.")
+    monte_carlo_parser.add_argument("--no_glie", action="store_true", help="Don't use GLIE policy improvement during run.")
     monte_carlo_parser.add_argument("--epsilon", type=float, default=0.9, 
         help="The epsilon value to use when implementing the epsilon-greedy policy. Ignored when using GLIE.")
 
     return parser.parse_args()
 
 def main(args):
-    mdp = StudentMDP()
-    value_function = ValueFunctionTabular(mdp)
-    algorithm = ValueIteration(mdp, value_function, args.discount_rate, args.delta_threshold)
+    algorithm = AlgorithmCreator.build(args.algorithm, args)
     algorithm.run()
 
 if __name__ == "__main__":
