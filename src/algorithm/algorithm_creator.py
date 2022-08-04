@@ -1,9 +1,9 @@
-from algorithm.monte_carlo import MonteCarlo
-from algorithm.policy import Policy
-from algorithm.value_iteration import ValueIteration
-from function.action_value_function_tabular import ActionValueFunctionTabular
-from function.value_function_tabular import ValueFunctionTabular
-from mdp.student_mdp import StudentMDP
+from .monte_carlo import MonteCarlo
+from .policy import Policy
+from .value_iteration import ValueIteration
+from function import ActionValueFunctionTabular
+from function import ValueFunctionTabular
+from mdp import StudentMDP
 
 class AlgorithmCreator:
     """

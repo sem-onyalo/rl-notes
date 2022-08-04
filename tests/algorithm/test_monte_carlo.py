@@ -2,8 +2,8 @@ import unittest
 
 from src.algorithm.monte_carlo import MonteCarlo
 from src.algorithm.policy import Policy
-from src.function.action_value_function_tabular import ActionValueFunctionTabular
-from src.mdp.student_mdp import StudentMDP
+from src.function import ActionValueFunctionTabular
+from src.mdp import StudentMDP
 
 class TestMonteCarlo(unittest.TestCase):
     def setUp(self):

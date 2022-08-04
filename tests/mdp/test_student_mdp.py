@@ -1,6 +1,6 @@
 import unittest
 
-from src.mdp.student_mdp import StudentMDP
+from src.mdp import StudentMDP
 
 class TestStudentMDP(unittest.TestCase):
     def setUp(self):

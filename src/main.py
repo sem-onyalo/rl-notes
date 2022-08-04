@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from algorithm_creator import AlgorithmCreator
+from algorithm import AlgorithmCreator
 
 def init_logger():
     logging.basicConfig(

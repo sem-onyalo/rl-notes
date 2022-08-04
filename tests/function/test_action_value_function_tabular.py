@@ -1,7 +1,7 @@
 import unittest
 
-from src.function.action_value_function_tabular import ActionValueFunctionTabular
-from src.mdp.student_mdp import StudentMDP
+from src.function import ActionValueFunctionTabular
+from src.mdp import StudentMDP
 
 class TestActionValueFunctionTabular(unittest.TestCase):
     def setUp(self):
