@@ -2,7 +2,7 @@ import logging
 
 class MonteCarlo:
     """
-    This class represents the first-visit Monte Carlo exploring starts control (policy optimization) algorithm.
+    This class represents the GLIE (Greedy in the Limit with Infinite Exploration) Monte-Carlo control algorithm.
     """
 
     def __init__(self, mdp, function, policy, discount_rate, max_episodes=100, do_glie=True):
