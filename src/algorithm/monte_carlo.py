@@ -62,6 +62,9 @@ class MonteCarlo:
                     episode_visit[state][action] = True
 
                 # update the total rewards for all the state-action pairs that have been taken in this episode
+                # TODO: pretty sure I need to move this out of the episodes. I don't think the monte-carlo algorithm
+                #       updates the action-value function within the episode (i.e. like TD). Move right before policy 
+                #       update
                 for state_visited in returns:
                     if returns[state_visited] != None:
                         for action_taken in returns[state_visited]:
