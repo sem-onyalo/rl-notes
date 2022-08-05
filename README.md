@@ -31,7 +31,7 @@ At the end of each episode, we update the policy so as to converge on the optima
 #### Test GLIE Monte-Carlo Control
 
 ```
-python -m unittest tests.test_monte_carlo.TestMonteCarlo.test_algorithm
+python -m unittest tests.algorithm.test_monte_carlo.TestMonteCarlo.test_algorithm
 ```
 
 **Note:** The resulting policy is deterministic (as the number of episodes goes to infinity) but the resulting action-value function is not, because of the stochastic nature of picking an action from a state combined with the policy converging to a greedy policy. This results in the values for each state-action pair to be farther from the true value as the state gets farther from the terminal state. For example, the state-action value of _State 3_ always equals the true state-action value, _State 2_ is typically (although not always) within +/-0.5 of the true state-action value, but _State 0_ is consistently outside +/-1 of the true state-action value. A couple ways to fix this (not yet explored) could be to converge to a greedy policy more slowly while increasing the number of total episodes.
@@ -53,7 +53,7 @@ Implementing the value iteration algorithm on the [student MDP example](#student
 #### Test Value Iteration
 
 ```
-python -m unittest tests.test_value_iteration.TestValueIteration.test_algorithm
+python -m unittest tests.algorithm.test_value_iteration.TestValueIteration.test_algorithm
 ```
 
 #### Value Iteration References
