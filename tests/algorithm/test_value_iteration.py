@@ -17,16 +17,6 @@ class TestValueIteration(unittest.TestCase):
         other = ValueIteration(mdp, ValueFunctionTabular(mdp), self.discount_rate, self.delta_threshold)
         self.assertTrue(self.algorithm == other)
 
-    def test_discount_rate_init(self):
-        expected = self.discount_rate
-        actual = self.algorithm.discount_rate
-        self.assertEqual(expected, actual)
-
-    def test_delta_threshold_init(self):
-        expected = self.delta_threshold
-        actual = self.algorithm.delta_threshold
-        self.assertEqual(expected, actual)
-
     def test_one_iteration(self):
         expected = { 0: 0., 1: -1., 2: 0., 3: 10., 4: 0. }
         actual = self.algorithm.update_state_values()

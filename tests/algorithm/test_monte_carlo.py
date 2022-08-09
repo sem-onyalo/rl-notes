@@ -24,16 +24,6 @@ class TestMonteCarlo(unittest.TestCase):
 
         self.assertTrue(self.algorithm == expected)
 
-    def test_discount_rate_init(self):
-        expected = self.discount_rate
-        actual = self.algorithm.discount_rate
-        self.assertEqual(expected, actual)
-
-    def test_do_glie_init(self):
-        expected = True
-        actual = self.algorithm.do_glie
-        self.assertEqual(expected, actual)
-
     def test_one_iteration(self):
         policy_init = { 0: None, 1: None, 2: None, 3: None, 4: None }
         function_init = { 0: { 0: 0., 1: 0. }, 1: { 0: 0., 2: 0. }, 2: { 2: 0., 3: 0. }, 3: { 2: 0., 4: 0. }, 4: 0. }
