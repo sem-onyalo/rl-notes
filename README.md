@@ -51,6 +51,12 @@ At the end of each episode, we update the policy so as to converge on the optima
 
 ![GLIE monte-carlo control policy update](./docs/glie-monte-carlo-control-policy-update.png)
 
+#### Run GLIE Monte-Carlo Control
+
+```
+python ./src/main.py monte-carlo
+```
+
 #### Test GLIE Monte-Carlo Control
 
 ```
@@ -72,6 +78,12 @@ Implementing the value iteration algorithm on the [student MDP example](#student
 ![optimal value iteration](./docs/algorithm-optimal-value-iteration.png)
 
 ![backup diagram value iteration](./docs/backup-diagram-value-iteration.png)
+
+#### Run Value Iteration
+
+```
+python ./src/main.py value-iteration
+```
 
 #### Test Value Iteration
 
