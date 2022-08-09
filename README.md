@@ -10,6 +10,29 @@ python -m unittest
 
 ## Algorithms
 
+### Q-Learning Off-Policy Control
+
+Implementing the Q-Learning off-policy algorithm (aka SARSAMAX). Given a state-action pair, the algorithm updates the action value function for that state-action pair towards the optimal action value function. The behaviour policy (i.e. the policy that dictates what actions we will take) is an epsilon-greedy policy. The epsilon value is controlled using the `epsilon` parameter. The target policy (i.e. the policy we are evaluating) is a greedy policy. The target policy is implemented by getting the max action value function across all state-action pairs, where the state-action pairs are the state we end up in and all possible actions from that state (i.e. S' and a').  The rate at which the action value function is updated across the episodes is control by the parameter `change-rate`. The max action value function is discounted using the `discount-rate` parameter.
+
+![Q-Learning equation and backup diagram](./docs/q-learning-equation-and-backup-diagram.png)
+
+#### Run Q-Learning Off-Policy Control
+
+```
+python ./src/main.py q-learning
+```
+
+#### Test Q-Learning Off-Policy Control
+
+```
+python -m unittest tests.algorithm.test_q_learning.TestQLearning.test_algorithm
+```
+
+#### Q-Learning Off-Policy Control References
+
+1. Chapter 6.5 in [reference #1](#references).
+2. Lecture 5 in [reference #2](#references) at [1:19:50](https://youtu.be/0g4j2k_Ggc4?t=4790).
+
 ### GLIE Monte-Carlo Control
 
 Implementing the GLIE (Greedy in the Limit with Infinite Exploration) Monte-Carlo control algorithm on the [student MDP example](#student-mdp). GLIE refers to the policy converging to a greedy policy as the episodes increase. In this algorithm implementation we are using an epsilon-greedy policy, where epsilon is updated to 1 / the _k_ th episode.
