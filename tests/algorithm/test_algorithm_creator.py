@@ -3,7 +3,11 @@ import unittest
 from src.algorithm.algorithm_creator import AlgorithmCreator
 from src.algorithm.monte_carlo import MonteCarlo
 from src.algorithm.policy import Policy
+from src.algorithm.q_learning import QLearning
 from src.algorithm.value_iteration import ValueIteration
+from src.constants import MONTE_CARLO
+from src.constants import Q_LEARNING
+from src.constants import VALUE_ITERATION
 from src.function import ActionValueFunctionTabular
 from src.function import ValueFunctionTabular
 from src.mdp import StudentMDP
@@ -32,7 +36,7 @@ class TestAlgorithmCreator(unittest.TestCase):
         args.discount_rate = discount_rate
         args.delta_threshold = delta_threshold
 
-        actual = AlgorithmCreator.build("value-iteration", args)
+        actual = AlgorithmCreator.build(VALUE_ITERATION, args)
         self.assertEqual(expected, actual)
 
     def test_monte_carlo(self):
@@ -52,6 +56,28 @@ class TestAlgorithmCreator(unittest.TestCase):
         args.episodes = 100
         args.no_glie = False
 
-        actual = AlgorithmCreator.build("monte-carlo", args)
+        actual = AlgorithmCreator.build(MONTE_CARLO, args)
+        self.assertEqual(expected, actual)
+
+    def test_q_learning(self):
+        epsilon = 0.5
+        change_rate = 0.2
+        discount_rate = 1.
+        mdp = StudentMDP()
+
+        expected = QLearning(
+            mdp=mdp,
+            function=ActionValueFunctionTabular(mdp),
+            policy=Policy(mdp, epsilon),
+            discount_rate=discount_rate,
+            change_rate=change_rate)
+
+        args = RuntimeArgs()
+        args.epsilon = epsilon
+        args.change_rate = change_rate
+        args.discount_rate = discount_rate
+        args.episodes = 100
+
+        actual = AlgorithmCreator.build(Q_LEARNING, args)
         self.assertEqual(expected, actual)
 
