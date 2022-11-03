@@ -10,6 +10,25 @@ python -m unittest
 
 ## Algorithms
 
+### Monte-Carlo Policy Gradient (REINFORCE) Control
+
+_TODO_
+
+```
+pipenv run python src/main.py -e 500 -m racecar-mdp monte-carlo-policy-gradient --layers 2,16
+```
+
+#### Normalization
+
+Added state normalization in the range [-1,1] when using `RacecarBulletGymMDP` because during training the policy approximation function would return NaN action probabilities. Normalization helped but sometimes it will still fail before `max_episodes` is complete. 
+
+Some things to look into to investigate further:
+
+1. Try smoothing the rewards from the gym environment, it seems to start low (i.e. < -150). 
+2. Try using a policy approximation function with batch norm layers.
+
+![Normalization](./docs/normalization.png)
+
 ### Q-Learning Off-Policy Control
 
 Implementing the Q-Learning off-policy algorithm (aka SARSAMAX). Given a state-action pair, the algorithm updates the action value function for that state-action pair towards the optimal action value function. The behaviour policy (i.e. the policy that dictates what actions we will take) is an epsilon-greedy policy. The epsilon value is controlled using the `epsilon` parameter. The target policy (i.e. the policy we are evaluating) is a greedy policy. The target policy is implemented by getting the max action value function across all state-action pairs, where the state-action pairs are the state we end up in and all possible actions from that state (i.e. S' and a').  The rate at which the action value function is updated across the episodes is control by the parameter `change-rate`. The max action value function is discounted using the `discount-rate` parameter.
