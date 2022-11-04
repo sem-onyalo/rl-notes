@@ -4,10 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-
-[dev-packages]
 numpy = "*"
 matplotlib = "*"
+gym = "*"
+pybullet = "*"
+
+[dev-packages]
 
 [requires]
 python_version = "3.8"

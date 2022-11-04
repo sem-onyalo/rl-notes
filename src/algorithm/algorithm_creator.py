@@ -6,6 +6,7 @@ from .q_learning import QLearning
 from .value_iteration import ValueIteration
 from function import ActionValueFunctionTabular
 from function import ValueFunctionTabular
+from mdp import DriftCarMDP
 from mdp import RacecarBulletGymMDP
 from mdp import StudentMDP
 
@@ -20,9 +21,11 @@ class AlgorithmCreator:
             mdp = StudentMDP()
         elif mdp_name == ct.RACECAR_MDP:
             mdp = RacecarBulletGymMDP()
+        elif mdp_name == ct.DRIFT_CAR_MDP:
+            mdp = DriftCarMDP()
         else:
             raise Exception(f"The MDP '{mdp_name}' is invalid or not yet implemented")
-        
+
         if algorithm_name == ct.VALUE_ITERATION:
             function = ValueFunctionTabular(mdp)
             algorithm = ValueIteration(mdp, function, args.discount_rate, args.delta_threshold)

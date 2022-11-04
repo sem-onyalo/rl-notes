@@ -117,6 +117,16 @@ python -m unittest tests.algorithm.test_value_iteration.TestValueIteration.test_
 
 ## MDPs
 
+### Drift Car MDP
+
+An MDP that encapsultes a [gym-based](https://www.gymlibrary.dev/) environment. Based on the [PyBullet RacecarBulletEnv-v0](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.wz5to0x8kqmr), which itself is based on the [MIT Racecar](https://racecar.mit.edu/platform).
+
+To install:
+
+```
+pipenv run pip install -e src/mdp/sem_gyms/
+```
+
 ### Student MDP
 
 An example MDP for testing algorithms based off of the example in Lecture 2 in [reference #2](#references) at [1:21:47](https://youtu.be/lfHX2hHRMVQ?t=4907).

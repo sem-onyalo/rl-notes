@@ -62,7 +62,7 @@ class MonteCarloPolicyGradient(AlgorithmNet):
             max_rewards.append(max_reward)
             self.log_episode_metrics(state_action_path, total_reward, max_reward)
 
-        if not self.no_plot:
+        if not self.no_plot and max_episodes > 0:
             plot_training_metrics(ALGORITHM_NAME, max_episodes, total_rewards, max_rewards)
 
     def run_episode(self):
