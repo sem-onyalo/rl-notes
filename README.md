@@ -119,7 +119,7 @@ python -m unittest tests.algorithm.test_value_iteration.TestValueIteration.test_
 
 ### Drift Car MDP
 
-An MDP that encapsultes a [gym-based](https://www.gymlibrary.dev/) environment. Based on the [PyBullet RacecarBulletEnv-v0](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.wz5to0x8kqmr), which itself is based on the [MIT Racecar](https://racecar.mit.edu/platform).
+An MDP that encapsultes a [gym-based](https://www.gymlibrary.dev/) environment. The custom gym, `DriftCarEnvV0`, is based on the [PyBullet RacecarBulletEnv-v0](https://docs.google.com/document/d/10sXEhzFRSnvFcl3XxNGhnD4N2SedqwdAvK3dsihxVUA/edit#heading=h.wz5to0x8kqmr), which itself is based on the [MIT Racecar](https://racecar.mit.edu/platform).
 
 To install:
 
