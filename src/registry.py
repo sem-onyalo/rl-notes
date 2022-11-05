@@ -39,10 +39,22 @@ def write_plot(x_list, y_lists, plot_labels, x_label, y_label, title, filename):
     plt.savefig(buffer)
     plt.close()
 
-    write_bytes(buffer, "./eval", filename)
+    write_bytes("./eval", filename, buffer)
 
-def write_bytes(buffer:io.BytesIO, root:str, filename:str):
+def save_model(filename:str, buffer:io.BytesIO) -> None:
+    write_bytes("./eval", filename, buffer)
+
+def load_model(filename:str) -> io.BytesIO:
+    return read_bytes("./eval", filename)
+
+def write_bytes(root:str, filename:str, buffer:io.BytesIO):
     os.makedirs(root, exist_ok=True)
     path = os.path.join(root, filename)
     with open(path, mode="wb") as fd:
         fd.write(buffer.getvalue())
+
+def read_bytes(root:str, filename:str) -> io.BytesIO:
+    file_path = os.path.join(root, filename)
+    assert os.path.exists(file_path), f"Error: the file path {file_path} could not be found"
+    buffer = open(file_path, mode="rb")
+    return buffer

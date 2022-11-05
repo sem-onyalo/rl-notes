@@ -15,7 +15,8 @@ def get_runtime_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
     parser.add_argument("-m", "--mdp", type=str, default=ct.STUDENT_MDP, help="The MDP to train the algorithm on.")
-    
+    parser.add_argument("-i", "--inference", action="store_true")
+
     subparser = parser.add_subparsers(dest="algorithm")
 
     value_iteration_parser = subparser.add_parser(ct.VALUE_ITERATION, help="Value iteration DP algorithm.")

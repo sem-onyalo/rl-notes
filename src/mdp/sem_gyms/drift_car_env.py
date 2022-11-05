@@ -75,23 +75,34 @@ class DriftCarEnvV0(gym.Env):
     def __del__(self):
         self.bullet_client = 0
 
-    def get_delta_positions(self) -> Tuple[int, int]:
+    def get_positions(self) -> Tuple[int, int]:
         car_pos, _ = self.bullet_client.getBasePositionAndOrientation(self.racecar.racecarUniqueId)
         target_pos, _  = self.bullet_client.getBasePositionAndOrientation(self._ballUniqueId)
-        x_delta = abs(car_pos[0] - target_pos[0])
-        y_delta = abs(car_pos[1] - target_pos[1])
+
+        round_precison = 2
+        car_pos_x = round(car_pos[0], round_precison)
+        car_pos_y = round(car_pos[1], round_precison)
+        target_pos_x = round(target_pos[0], round_precison)
+        target_pos_y = round(target_pos[1], round_precison)
+
+        delta_x = abs(car_pos_x - target_pos_x)
+        delta_y = abs(car_pos_y - target_pos_y)
 
         # _logger.info(f"deltas: {x_delta},{y_delta}")
 
-        return x_delta, y_delta
+        return delta_x, delta_y, car_pos_x, car_pos_y, target_pos_x, target_pos_y
 
     def is_terminal(self):
-        x_delta, y_delta = self.get_delta_positions()
+        delta_x, delta_y, _, _, _, _ = self.get_positions()
 
-        if x_delta > self.coords_bound:
+        distance_threshold = .4
+        if (delta_x + delta_y) / 2 < distance_threshold:
             return True
 
-        if y_delta > self.coords_bound:
+        if delta_x > self.coords_bound:
+            return True
+
+        if delta_y > self.coords_bound:
             return True
 
         if self.step_counter > 300:
@@ -100,22 +111,21 @@ class DriftCarEnvV0(gym.Env):
         return False
 
     def get_reward(self):
-        x_delta, y_delta = self.get_delta_positions()
+        delta_x, delta_y, _, _, _, _ = self.get_positions()
 
-        reward = -(x_delta + y_delta) / 2
+        reward = -(delta_x + delta_y) / 2
 
         return reward
 
     def get_observation(self):
-        car_pos, car_orn = self.bullet_client.getBasePositionAndOrientation(self.racecar.racecarUniqueId)
-        target_pos, _  = self.bullet_client.getBasePositionAndOrientation(self._ballUniqueId)
+        _, _, car_pos_x, car_pos_y, target_pos_x, target_pos_y = self.get_positions()
 
-        _logger.info(f"pos: {car_pos}")
-        _logger.info(f"orn: {car_orn}")
+        _logger.info(f"pos: {car_pos_x}, {car_pos_y}")
+        # _logger.info(f"orn: {car_orn}")
 
         observation = {
-            "agent": np.array([car_pos[0], car_pos[1]]), #np.array([car_pos[0], car_pos[1], car_orn[0], car_orn[1], car_orn[3]]),
-            "target": np.array([target_pos[0], target_pos[1]])
+            "agent": np.array([car_pos_x, car_pos_y]), #np.array([car_pos[0], car_pos[1], car_orn[0], car_orn[1], car_orn[3]]),
+            "target": np.array([target_pos_x, target_pos_y])
         }
 
         return observation

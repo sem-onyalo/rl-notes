@@ -1,6 +1,7 @@
 import constants as ct
 from .monte_carlo import MonteCarlo
 from .monte_carlo_policy_gradient import MonteCarloPolicyGradient
+from .monte_carlo_policy_gradient_inf import MonteCarloPolicyGradientInf
 from .policy import Policy
 from .q_learning import QLearning
 from .value_iteration import ValueIteration
@@ -22,7 +23,7 @@ class AlgorithmCreator:
         elif mdp_name == ct.RACECAR_MDP:
             mdp = RacecarBulletGymMDP()
         elif mdp_name == ct.DRIFT_CAR_MDP:
-            mdp = DriftCarMDP()
+            mdp = DriftCarMDP(show_visual=args.inference)
         else:
             raise Exception(f"The MDP '{mdp_name}' is invalid or not yet implemented")
 
@@ -38,7 +39,10 @@ class AlgorithmCreator:
             policy = Policy(mdp, args.epsilon)
             algorithm = QLearning(mdp, function, policy, args.discount_rate, args.change_rate, args.episodes)
         elif algorithm_name == ct.MONTE_CARLO_POLICY_GRADIENT:
-            algorithm = MonteCarloPolicyGradient(mdp, args.layers, args.discount_rate, args.change_rate, args.batch_size, args.episodes)
+            if args.inference:
+                algorithm = MonteCarloPolicyGradientInf(mdp, args.layers)
+            else:
+                algorithm = MonteCarloPolicyGradient(mdp, args.layers, args.discount_rate, args.change_rate, args.batch_size, args.episodes)
         else:
             raise Exception(f"The name '{algorithm_name}' is not a valid algorithm name.")
 

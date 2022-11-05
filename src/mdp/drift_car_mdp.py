@@ -4,9 +4,8 @@ import gym
 from . import sem_gyms
 
 class DriftCarMDP:
-    def __init__(self) -> None:
-        self.env = gym.make("sem_gyms/DriftCarEnv-v0")
-        # self.env = gym.make("sem_gyms/DriftCarEnv-v0", renders=True)
+    def __init__(self, show_visual=False) -> None:
+        self.env = gym.make("sem_gyms/DriftCarEnv-v0", renders=show_visual)
 
         self.actions = list(range(0, self.env.action_space.n))
 

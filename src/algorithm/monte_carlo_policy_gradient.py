@@ -1,3 +1,4 @@
+import io
 import logging
 
 import numpy as np
@@ -10,8 +11,10 @@ from model import ExperienceMemory
 from model import StateActionPair
 from model import Transition
 from registry import plot_training_metrics
+from registry import save_model
 
 ALGORITHM_NAME = "monte-carlo-policy-gradient"
+TRAINED_MODEL_FILENAME = f"{ALGORITHM_NAME}.pth"
 
 _logger = logging.getLogger(ALGORITHM_NAME)
 
@@ -64,6 +67,7 @@ class MonteCarloPolicyGradient(AlgorithmNet):
 
         if not self.no_plot and max_episodes > 0:
             plot_training_metrics(ALGORITHM_NAME, max_episodes, total_rewards, max_rewards)
+            self.save_model()
 
     def run_episode(self):
         total_reward = 0
@@ -130,3 +134,9 @@ class MonteCarloPolicyGradient(AlgorithmNet):
         self.optimizer.step()
 
         self.memory.clear()
+
+    def save_model(self) -> None:
+        buffer = io.BytesIO()
+        model_state_dict = self.policy_function.state_dict()
+        torch.save(model_state_dict, buffer)
+        save_model(TRAINED_MODEL_FILENAME, buffer)
