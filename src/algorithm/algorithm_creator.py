@@ -4,12 +4,15 @@ from .monte_carlo_policy_gradient import MonteCarloPolicyGradient
 from .monte_carlo_policy_gradient_inf import MonteCarloPolicyGradientInf
 from .policy import Policy
 from .q_learning import QLearning
+from .q_network import QNetwork
+from .q_network_inf import QNetworkInf
 from .value_iteration import ValueIteration
 from function import ActionValueFunctionTabular
 from function import ValueFunctionTabular
 from mdp import DriftCarMDP
 from mdp import RacecarBulletGymMDP
 from mdp import StudentMDP
+from model import EpsilonDecayExp
 
 class AlgorithmCreator:
     """
@@ -38,6 +41,12 @@ class AlgorithmCreator:
             function = ActionValueFunctionTabular(mdp)
             policy = Policy(mdp, args.epsilon)
             algorithm = QLearning(mdp, function, policy, args.discount_rate, args.change_rate, args.episodes)
+        elif algorithm_name == ct.Q_NETWORK:
+            if args.inference:
+                algorithm = QNetworkInf(mdp, args.layers)
+            else:
+                epsilon_decay = EpsilonDecayExp(args.epsilon, args.epsilon_end, args.epsilon_decay_rate)
+                algorithm = QNetwork(mdp, epsilon_decay, args.layers, discount_rate=args.discount_rate, change_rate=args.change_rate, max_episodes=args.episodes, batch_size=args.batch_size)
         elif algorithm_name == ct.MONTE_CARLO_POLICY_GRADIENT:
             if args.inference:
                 algorithm = MonteCarloPolicyGradientInf(mdp, args.layers)

@@ -14,5 +14,5 @@ class DriftCarMDP:
         return observation["agent"]
 
     def step(self, action:int) -> Tuple[float, int, bool]:
-        observation, reward, is_terminal, _, _ = self.env.step(action)
-        return reward, observation["agent"], is_terminal
+        observation, reward, is_terminal, _, info = self.env.step(action)
+        return reward, observation["agent"], is_terminal, info

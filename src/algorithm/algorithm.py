@@ -3,7 +3,11 @@ from typing import List
 
 from model import StateActionPair
 
+from mdp import MDP
+
 class Algorithm:
+    mdp:MDP
+
     def __init__(self, name) -> None:
         self.name = name
         self.logger = logging.getLogger(self.name)

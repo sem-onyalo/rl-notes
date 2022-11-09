@@ -1,5 +1,6 @@
 import io
 import logging
+import time
 
 import numpy as np
 import torch
@@ -8,7 +9,6 @@ import torch.optim as optim
 from .algorithm_net import AlgorithmNet
 from mdp import MDP
 from model import ExperienceMemory
-from model import StateActionPair
 from model import Transition
 from registry import plot_training_metrics
 from registry import save_model
@@ -41,18 +41,20 @@ class MonteCarloPolicyGradient(AlgorithmNet):
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
 
+        self.terminal_reasons = {}
         total_rewards = []
         max_rewards = []
         max_reward = None
         self.steps = 0
-        
+
+        t0 = time.time()
         for i in range(0, max_episodes):
             _logger.info("-" * 50)
             _logger.info(f"Episode {i + 1}")
             _logger.info("-" * 50)
 
             try:
-                total_reward, state_action_path = self.run_episode()
+                total_reward = self.run_episode()
             except Exception as e:
                 _logger.error(f"Run episode failed on episode {i + 1} at step count {self.steps}: {e}")
                 max_episodes = i
@@ -63,39 +65,49 @@ class MonteCarloPolicyGradient(AlgorithmNet):
             max_reward = total_reward if max_reward == None or total_reward > max_reward else max_reward
             total_rewards.append(total_reward)
             max_rewards.append(max_reward)
-            self.log_episode_metrics(state_action_path, total_reward, max_reward)
+            self.log_episode_metrics([], total_reward, max_reward)
+
+        _logger.info(f"Training elapsed time: {time.time() - t0}")
+        
+        _logger.info("-" * 50)
+        _logger.info(f"Terminal reasons")
+        _logger.info("-" * 50)
+
+        for key in self.terminal_reasons:
+            _logger.info(f"{key}: {self.terminal_reasons[key]}")
 
         if not self.no_plot and max_episodes > 0:
             plot_training_metrics(ALGORITHM_NAME, max_episodes, total_rewards, max_rewards)
             self.save_model()
 
     def run_episode(self):
+        t0 = time.time()
         total_reward = 0
         is_terminal = False
-        state_action_path = []
         state = self.mdp.start()
 
         while not is_terminal:
             action = self.get_action(state)
-            reward, next_state, is_terminal = self.mdp.step(action)
+            reward, next_state, is_terminal, info = self.mdp.step(action)
             self.memory.push(Transition(state, action, next_state, reward))
             total_reward += reward
-
-            # may not need this anymore since we have memory now
-            _logger.info(f"state: {state}, action: {action}, reward: {reward}")
-            state_action_path.append(StateActionPair(state, action))
             state = next_state
+            self.steps += 1
 
-        return total_reward, state_action_path
+            if "reason" in info:
+                if info["reason"] in self.terminal_reasons:
+                    self.terminal_reasons[info["reason"]] += 1
+                else:
+                    self.terminal_reasons[info["reason"]] = 1
+
+        _logger.info(f"Episode elapsed time: {time.time() - t0}")
+
+        return total_reward
 
     def normalize_state(self, state):
         bound = 10.
         clipped = np.clip(state, -bound, bound)
-        # normed = (clipped - (bound/2)) / (bound/2) # normalize to -1,1
         normed = 2 * ((clipped - -bound) / (bound - -bound)) - 1 # normalize to -1,1
-        # _logger.info(f"state: {state}")
-        # _logger.info(f"clipped: {clipped}")
-        # _logger.info(f"normed: {normed}")
         return normed
 
     def get_action(self, state:list):

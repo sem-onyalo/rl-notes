@@ -1,18 +1,17 @@
 import logging
 
-import numpy as np
 import torch
 import torch.nn as nn
 
-from .monte_carlo_policy_gradient import ALGORITHM_NAME
-from .monte_carlo_policy_gradient import MonteCarloPolicyGradient
-from .monte_carlo_policy_gradient import TRAINED_MODEL_FILENAME
+from .q_network import ALGORITHM_NAME
+from .q_network import QNetwork
+from .q_network import TRAINED_MODEL_FILENAME
 from mdp import MDP
 from registry import load_model
 
 _logger = logging.getLogger(f"{ALGORITHM_NAME}-inf")
 
-class MonteCarloPolicyGradientInf(MonteCarloPolicyGradient):
+class QNetworkInf(QNetwork):
     def __init__(self, mdp:MDP, layers:str) -> None:
         self.mdp = mdp
         self.function = self.build_function(layers)
@@ -33,15 +32,13 @@ class MonteCarloPolicyGradientInf(MonteCarloPolicyGradient):
                 state = next_state
 
     def get_action(self, state):
+        state_normed = self.normalize_state(state)
         with torch.no_grad():
-            state_expanded = np.expand_dims(state, axis=0)
-            state_tensor = torch.tensor(state_expanded, dtype=torch.float32, device=self.device)
-            state_tensor = self.normalize_state(state_tensor)
-            action_probs = self.function(state_tensor)
-            return action_probs.max(1)[1].item()
+            predictions = self.function(state_normed)
+            return predictions.max(1)[1].item()
 
     def build_function(self, layers:str) -> nn.Module:
-        model = self.build_linear_softmax_function(layers)
+        model = self.build_linear_function(layers)
         buffer = load_model(TRAINED_MODEL_FILENAME)
         model.load_state_dict(torch.load(buffer))
         model.eval()

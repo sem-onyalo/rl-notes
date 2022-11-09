@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -7,42 +9,62 @@ from .algorithm import Algorithm
 class AlgorithmNet(Algorithm):
     device:torch.device
 
-    def build_linear_function(self, layers_str:str):
-        # TODO: if the last layer value <> len(self.mdp.actions)
-        # then manually add a final layer with len(self.mdp.actions)
-        # number of outputs
+    def parse_layers_str(self, layers_str:str) -> List[int]:
+        min_layers = 2
         layers = list(map(int, layers_str.split(",")))
+        assert len(layers) >= min_layers, f"Error: number of layers must be a minimum of {min_layers}"
+        return layers
 
+    def init_first_layer(self, layers:List[int]) -> List[nn.Module]:
         net_layers = []
+        # TODO: get state space count and add first layer if layers[0] is not equal to it
+        return net_layers
+
+    def init_middle_layers(self, layers:List[int], net_layers:List[nn.Module], activation_layer_type:str) -> None:
         for i in range(1, len(layers) - 1):
             net_layers.append(nn.Linear(layers[i - 1], layers[i]))
-            net_layers.append(nn.BatchNorm1d(layers[i]))
+            if activation_layer_type == "batch-norm":
+                net_layers.append(nn.BatchNorm1d(layers[i]))
+            elif activation_layer_type == "relu":
+                net_layers.append(nn.ReLU())
+            else:
+                raise Exception(f"Error creating middle layer, activation layer type {activation_layer_type} is invalid")
+
         net_layers.append(nn.Linear(layers[-2], layers[-1]))
+
+    def init_final_layer(self, layers:List[int], net_layers:List[nn.Module]) -> None:
+        if layers[-1] != len(self.mdp.actions):
+            net_layers.append(nn.Linear(layers[-1], len(self.mdp.actions)))
+
+    def build_linear_function(self, layers_str:str):
+        layers = self.parse_layers_str(layers_str)
+
+        net_layers = self.init_first_layer(layers)
+
+        self.init_middle_layers(layers, net_layers, "batch-norm")
+
+        self.init_final_layer(layers, net_layers)
+
         return nn.Sequential(*net_layers)
 
     def build_linear_softmax_function(self, layers_str:str):
-        layers = list(map(int, layers_str.split(",")))
-        assert len(layers) >= 2, "Error: number of layers must be a minimum of 3"
+        layers = self.parse_layers_str(layers_str)
 
-        net_layers = []
-        for i in range(1, len(layers) - 1):
-            net_layers.append(nn.Linear(layers[i - 1], layers[i]))
-            net_layers.append(nn.ReLU())
-        net_layers.append(nn.Linear(layers[-2], layers[-1]))
+        net_layers = self.init_first_layer(layers)
 
-        # final layer needs to be same size as action space length
-        if layers[-1] != len(self.mdp.actions):
-            net_layers.append(nn.Linear(layers[-1], len(self.mdp.actions)))
+        self.init_middle_layers(layers, net_layers, "relu")
+
+        self.init_final_layer(layers, net_layers)
 
         net_layers.append(nn.Softmax(dim=-1))
 
         return nn.Sequential(*net_layers)
 
-    def state_to_tensor(self, state:object):
-        if isinstance(state, int) or isinstance(state, float):
-            state = np.expand_dims([state], axis=0)
+    # def state_to_tensor(self, state:object):
+    #     if isinstance(state, int) or isinstance(state, float):
+    #         state = np.expand_dims([state], axis=0)
 
-        return torch.tensor(state, dtype=torch.float32, device=self.device)
+    #     return torch.tensor(state, dtype=torch.float32, device=self.device)
 
     def transitions_to_batches(self, transitions):
         batch = list(zip(*transitions))

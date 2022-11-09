@@ -4,17 +4,18 @@ import logging
 import constants as ct
 from algorithm import AlgorithmCreator
 
-def init_logger():
+def init_logger(level:str):
     logging.basicConfig(
         format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
         datefmt="%Y/%m/%d %H:%M:%S",
-        level=logging.INFO
+        level=logging.getLevelName(level.upper())
     )
 
 def get_runtime_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
     parser.add_argument("-m", "--mdp", type=str, default=ct.STUDENT_MDP, help="The MDP to train the algorithm on.")
+    parser.add_argument("-l", "--log-level", type=str, default="INFO", help="The logging level to use.")
     parser.add_argument("-i", "--inference", action="store_true")
 
     subparser = parser.add_subparsers(dest="algorithm")
@@ -30,16 +31,26 @@ def get_runtime_args():
     monte_carlo_parser.add_argument("--epsilon", type=float, default=0.9, 
         help="The epsilon value to use when implementing the epsilon-greedy policy. Ignored when using GLIE.")
 
-    q_learning_parser = subparser.add_parser(ct.Q_LEARNING, help="Q-Learning off-policy control algorithm.")
-    q_learning_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
-    q_learning_parser.add_argument("--change-rate", type=float, default=0.2, help="The change-rate parameter.")
-    q_learning_parser.add_argument("--epsilon", type=float, default=0.6, help="The epsilon value for the epsilon-greedy policy.")
-
     monte_carlo_policy_gradient_parser = subparser.add_parser(ct.MONTE_CARLO_POLICY_GRADIENT, help="Run the Monte-Carlo policy gradient (REINFORCE) algorithm.")
     monte_carlo_policy_gradient_parser.add_argument("--layers", type=str, default="1,16,5", help="A comma-separated list representing the neural network architecture.")
     monte_carlo_policy_gradient_parser.add_argument("--change-rate", type=float, default=.2, help="The change-rate parameter.")
     monte_carlo_policy_gradient_parser.add_argument("--discount-rate", type=float, default=.9, help="The discount-rate parameter.")
     monte_carlo_policy_gradient_parser.add_argument("--batch-size", type=int, default=4, help="The number of episodes to batch together when updating the policy approximator function.")
+
+    q_learning_parser = subparser.add_parser(ct.Q_LEARNING, help="Q-Learning off-policy control algorithm.")
+    q_learning_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
+    q_learning_parser.add_argument("--change-rate", type=float, default=0.2, help="The change-rate parameter.")
+    q_learning_parser.add_argument("--epsilon", type=float, default=0.6, help="The epsilon value for the epsilon-greedy policy.")
+
+    q_network_parser = subparser.add_parser(ct.Q_NETWORK, help="Run the Deep Q-Network (DQN) control algorithm.")
+    q_network_parser.add_argument("--layers", type=str, default="1,3,9,5", help="A comma-separated list representing the neural network architecture.")
+    q_network_parser.add_argument("--epsilon", type=float, default=.9, help="The parameter representing the upper bound and starting value of the exploration probability value.")
+    q_network_parser.add_argument("--epsilon-end", type=float, default=.05, help="The parameter representing the lower bound of the exploration probability value.")
+    q_network_parser.add_argument("--epsilon-decay-rate", type=int, default=100, help="The parameter representing the decay rate of the exploration probability value.")
+    q_network_parser.add_argument("--change-rate", type=float, default=.2, help="The change-rate parameter.")
+    q_network_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
+    q_network_parser.add_argument("--batch-size", type=int, default=16, help="The number of transitions to use when training the action-value approximator functions.")
+    q_network_parser.add_argument("--target-update-freq", type=int, default=200, help="The frequency (in steps) to synchronize the target function weights with the behaviour weights.")
 
     return parser.parse_args()
 
@@ -48,7 +59,6 @@ def main(args):
     algorithm.run()
 
 if __name__ == "__main__":
-    init_logger()
     args = get_runtime_args()
+    init_logger(args.log_level)
     main(args)
-

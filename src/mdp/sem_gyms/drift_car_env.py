@@ -5,6 +5,7 @@ os.sys.path.insert(0, parentdir)
 
 import logging
 import os
+import math
 import time
 from typing import Tuple
 
@@ -45,11 +46,16 @@ class DriftCarEnvV0(gym.Env):
         self.is_discrete = is_discrete
         self.target_start_pos = target_start_pos
 
-        self.coords_bound = 10
-        self.velocity_actions = [   0,   0,     0,      1,   1,    1,]
-        self.steering_actions = [-0.6,   0,   0.6,   -0.6,   0,   0.6]
+        self.max_step_count = 1000
+        self.distance_to_target_lower_bound = .4
+        self.distance_to_target_upper_bound = 10
+
+        # self.discrete_velocity_actions = [   0,   0,     0,      1,   1,    1,]
+        # self.discrete_steering_actions = [-0.6,   0,   0.6,   -0.6,   0,   0.6]
+        self.discrete_velocity_actions = [   1,   1,     1]
+        self.discrete_steering_actions = [-0.6,   0,   0.6]
         if self.is_discrete:
-            self.action_space = spaces.Discrete(len(self.velocity_actions))
+            self.action_space = spaces.Discrete(len(self.discrete_velocity_actions))
         else:
             raise Exception("Continuous action space is not yet implemented, use isDiscrete=True")
 
@@ -88,40 +94,37 @@ class DriftCarEnvV0(gym.Env):
         delta_x = abs(car_pos_x - target_pos_x)
         delta_y = abs(car_pos_y - target_pos_y)
 
-        # _logger.info(f"deltas: {x_delta},{y_delta}")
+        distance_to_target = math.sqrt(delta_x**2 + delta_y**2)
 
-        return delta_x, delta_y, car_pos_x, car_pos_y, target_pos_x, target_pos_y
+        return distance_to_target, car_pos_x, car_pos_y, target_pos_x, target_pos_y
 
     def is_terminal(self):
-        delta_x, delta_y, _, _, _, _ = self.get_positions()
+        distance_to_target, _, _, _, _ = self.get_positions()
 
-        distance_threshold = .4
-        if (delta_x + delta_y) / 2 < distance_threshold:
-            return True
+        if distance_to_target < self.distance_to_target_lower_bound:
+            return True, "TARGET_REACHED"
 
-        if delta_x > self.coords_bound:
-            return True
+        if distance_to_target > self.distance_to_target_upper_bound:
+            return True, "BOUNDARY_REACHED"
 
-        if delta_y > self.coords_bound:
-            return True
-
-        if self.step_counter > 300:
-            return True
+        if self.step_counter > self.max_step_count:
+            return True, "STEP_LIMIT_REACHED"
         
-        return False
+        return False, ""
 
     def get_reward(self):
-        delta_x, delta_y, _, _, _, _ = self.get_positions()
+        distance_to_target, _, _, _, _ = self.get_positions()
 
-        reward = -(delta_x + delta_y) / 2
+        reward = 0 if distance_to_target == 0 else -distance_to_target
+        _logger.info(f"distance to target: {distance_to_target}")
+        _logger.info(f"reward: {reward}")
 
         return reward
 
     def get_observation(self):
-        _, _, car_pos_x, car_pos_y, target_pos_x, target_pos_y = self.get_positions()
+        _, car_pos_x, car_pos_y, target_pos_x, target_pos_y = self.get_positions()
 
         _logger.info(f"pos: {car_pos_x}, {car_pos_y}")
-        # _logger.info(f"orn: {car_orn}")
 
         observation = {
             "agent": np.array([car_pos_x, car_pos_y]), #np.array([car_pos[0], car_pos[1], car_orn[0], car_orn[1], car_orn[3]]),
@@ -132,8 +135,8 @@ class DriftCarEnvV0(gym.Env):
 
     def get_action(self, action):
         if self.is_discrete:
-            velocity = self.velocity_actions[action]
-            steering = self.steering_actions[action]
+            velocity = self.discrete_velocity_actions[action]
+            steering = self.discrete_steering_actions[action]
             return [velocity, steering]
 
         return action
@@ -176,7 +179,13 @@ class DriftCarEnvV0(gym.Env):
 
         self.step_counter += 1
 
-        return self.get_observation(), self.get_reward(), self.is_terminal(), False, {}
+        is_terminal, reason = self.is_terminal()
+
+        info = {}
+        if is_terminal:
+            info["reason"] = reason
+
+        return self.get_observation(), self.get_reward(), is_terminal, False, info
 
     def render(self, mode='human', close=False):
         if mode != "rgb_array":

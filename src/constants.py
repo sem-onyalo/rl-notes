@@ -1,5 +1,6 @@
 MONTE_CARLO = "monte-carlo"
 Q_LEARNING = "q-learning"
+Q_NETWORK = "q-network"
 VALUE_ITERATION = "value-iteration"
 MONTE_CARLO_POLICY_GRADIENT = "monte-carlo-policy-gradient"
 
