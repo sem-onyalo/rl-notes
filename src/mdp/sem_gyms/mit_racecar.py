@@ -67,11 +67,14 @@ class MitRacecar:
             else:
                 self.bullet_client.changeConstraint(constraint, gearRatio=config.gear_aux_link, maxForce=max_force)
 
-    def reset(self):
+    def reset(self, options=None):
+        start_pos = options["start_pos"] if options != None and "start_pos" in options else self.start_pos
+        start_orn = options["start_orn"] if options != None and "start_orn" in options else self.start_orn
+
         car = self.bullet_client.loadURDF(
             os.path.join(self.urdf_root_path, URDF_PATH),
-            basePosition=self.start_pos,
-            baseOrientation=self.start_orn,
+            basePosition=start_pos,
+            baseOrientation=start_orn,
             useFixedBase=False
         )
 

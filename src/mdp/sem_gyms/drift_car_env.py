@@ -35,7 +35,9 @@ class DriftCarEnvV0(gym.Env):
             renders=False,
             car_start_pos=[3, 0, .2],
             car_start_orn=[0, 0, 0, 1.],
-            target_start_pos=[0, 0, 1]
+            target_start_pos=[0, 0, 1],
+            max_step_count=1000,
+            boundary=5
         ):
         self.time_step = 0.01
         self.urdf_root_path = urdf_root
@@ -46,9 +48,9 @@ class DriftCarEnvV0(gym.Env):
         self.is_discrete = is_discrete
         self.target_start_pos = target_start_pos
 
-        self.max_step_count = 1000
+        self.max_step_count = max_step_count
         self.distance_to_target_lower_bound = .4
-        self.distance_to_target_upper_bound = 10
+        self.distance_to_target_upper_bound = boundary
 
         # self.discrete_velocity_actions = [   0,   0,     0,      1,   1,    1,]
         # self.discrete_steering_actions = [-0.6,   0,   0.6,   -0.6,   0,   0.6]
@@ -59,12 +61,7 @@ class DriftCarEnvV0(gym.Env):
         else:
             raise Exception("Continuous action space is not yet implemented, use isDiscrete=True")
 
-        self.observation_space = spaces.Dict(
-            {
-                "agent": spaces.Discrete(2),
-                "target": spaces.Discrete(2)
-            }
-        )
+        self.observation_space = spaces.Discrete(6)
 
         if self.renders:
             self.bullet_client = bc.BulletClient(connection_mode=pybullet.GUI)
@@ -82,12 +79,14 @@ class DriftCarEnvV0(gym.Env):
         self.bullet_client = 0
 
     def get_positions(self) -> Tuple[int, int]:
-        car_pos, _ = self.bullet_client.getBasePositionAndOrientation(self.racecar.racecarUniqueId)
+        car_pos, car_orn = self.bullet_client.getBasePositionAndOrientation(self.racecar.racecarUniqueId)
         target_pos, _  = self.bullet_client.getBasePositionAndOrientation(self._ballUniqueId)
 
-        round_precison = 2
+        round_precison = 4
         car_pos_x = round(car_pos[0], round_precison)
         car_pos_y = round(car_pos[1], round_precison)
+        car_orn_z = round(car_orn[2], round_precison)
+        car_orn_w = round(car_orn[3], round_precison)
         target_pos_x = round(target_pos[0], round_precison)
         target_pos_y = round(target_pos[1], round_precison)
 
@@ -96,10 +95,10 @@ class DriftCarEnvV0(gym.Env):
 
         distance_to_target = math.sqrt(delta_x**2 + delta_y**2)
 
-        return distance_to_target, car_pos_x, car_pos_y, target_pos_x, target_pos_y
+        return distance_to_target, target_pos_x, target_pos_y, car_pos_x, car_pos_y, car_orn_z, car_orn_w
 
     def is_terminal(self):
-        distance_to_target, _, _, _, _ = self.get_positions()
+        distance_to_target, _, _, _, _, _, _ = self.get_positions()
 
         if distance_to_target < self.distance_to_target_lower_bound:
             return True, "TARGET_REACHED"
@@ -107,13 +106,13 @@ class DriftCarEnvV0(gym.Env):
         if distance_to_target > self.distance_to_target_upper_bound:
             return True, "BOUNDARY_REACHED"
 
-        if self.step_counter > self.max_step_count:
+        if self.max_step_count > 0 and self.step_counter > self.max_step_count:
             return True, "STEP_LIMIT_REACHED"
-        
+
         return False, ""
 
     def get_reward(self):
-        distance_to_target, _, _, _, _ = self.get_positions()
+        distance_to_target, _, _, _, _, _, _ = self.get_positions()
 
         reward = 0 if distance_to_target == 0 else -distance_to_target
         _logger.info(f"distance to target: {distance_to_target}")
@@ -122,14 +121,16 @@ class DriftCarEnvV0(gym.Env):
         return reward
 
     def get_observation(self):
-        _, car_pos_x, car_pos_y, target_pos_x, target_pos_y = self.get_positions()
+        _, target_pos_x, target_pos_y, car_pos_x, car_pos_y, car_orn_z, car_orn_w = self.get_positions()
 
-        _logger.info(f"pos: {car_pos_x}, {car_pos_y}")
-
-        observation = {
-            "agent": np.array([car_pos_x, car_pos_y]), #np.array([car_pos[0], car_pos[1], car_orn[0], car_orn[1], car_orn[3]]),
-            "target": np.array([target_pos_x, target_pos_y])
-        }
+        observation = np.array([
+            target_pos_x,
+            target_pos_y,
+            car_pos_x,
+            car_pos_y,
+            car_orn_z,
+            car_orn_w
+        ])
 
         return observation
 
@@ -163,7 +164,7 @@ class DriftCarEnvV0(gym.Env):
             os.path.join(self.urdf_root_path, "sphere_small.urdf"),
             self.target_start_pos)
 
-        self.racecar.reset()
+        self.racecar.reset(options)
 
         self.step_counter = 0
 
@@ -182,10 +183,16 @@ class DriftCarEnvV0(gym.Env):
         is_terminal, reason = self.is_terminal()
 
         info = {}
+        reward = 0
         if is_terminal:
             info["reason"] = reason
 
-        return self.get_observation(), self.get_reward(), is_terminal, False, info
+            if reason == "TARGET_REACHED":
+                reward = 1
+            elif reason == "BOUNDARY_REACHED":
+                reward = -1
+
+        return self.get_observation(), reward, is_terminal, False, info
 
     def render(self, mode='human', close=False):
         if mode != "rgb_array":

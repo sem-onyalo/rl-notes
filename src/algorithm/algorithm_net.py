@@ -17,7 +17,9 @@ class AlgorithmNet(Algorithm):
 
     def init_first_layer(self, layers:List[int]) -> List[nn.Module]:
         net_layers = []
-        # TODO: get state space count and add first layer if layers[0] is not equal to it
+        if layers[0] != len(self.mdp.states):
+            net_layers.append(nn.Linear(len(self.mdp.states), layers[0]))
+
         return net_layers
 
     def init_middle_layers(self, layers:List[int], net_layers:List[nn.Module], activation_layer_type:str) -> None:

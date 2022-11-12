@@ -5,6 +5,7 @@ from .racecar_bullet_gym_mdp import RacecarBulletGymMDP
 from .student_mdp import StudentMDP
 
 class MDP:
+    states:list
     actions:list
 
     def start(self) -> float:

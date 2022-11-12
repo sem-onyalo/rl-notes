@@ -13,10 +13,12 @@ def init_logger(level:str):
 
 def get_runtime_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-e", "--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
     parser.add_argument("-m", "--mdp", type=str, default=ct.STUDENT_MDP, help="The MDP to train the algorithm on.")
     parser.add_argument("-l", "--log-level", type=str, default="INFO", help="The logging level to use.")
+    parser.add_argument("-e", "--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
+    parser.add_argument("-s", "--max-steps", type=int, default=1000, help="The maximum number of steps before the episode is considered terminal.")
     parser.add_argument("-i", "--inference", action="store_true")
+    parser.add_argument("-r", "--render", action="store_true")
 
     subparser = parser.add_subparsers(dest="algorithm")
 
