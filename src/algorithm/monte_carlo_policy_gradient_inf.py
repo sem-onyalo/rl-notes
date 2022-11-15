@@ -8,7 +8,7 @@ from .monte_carlo_policy_gradient import ALGORITHM_NAME
 from .monte_carlo_policy_gradient import MonteCarloPolicyGradient
 from .monte_carlo_policy_gradient import TRAINED_MODEL_FILENAME
 from mdp import MDP
-from registry import load_model
+# from registry import load_model
 
 _logger = logging.getLogger(f"{ALGORITHM_NAME}-inf")
 

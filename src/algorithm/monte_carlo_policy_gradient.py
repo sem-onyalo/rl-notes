@@ -11,7 +11,7 @@ from mdp import MDP
 from model import ExperienceMemory
 from model import Transition
 from registry import plot_training_metrics
-from registry import save_model
+# from registry import save_model
 
 ALGORITHM_NAME = "monte-carlo-policy-gradient"
 TRAINED_MODEL_FILENAME = f"{ALGORITHM_NAME}.pth"

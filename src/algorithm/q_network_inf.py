@@ -7,7 +7,7 @@ from .q_network import ALGORITHM_NAME
 from .q_network import QNetwork
 from .q_network import TRAINED_MODEL_FILENAME
 from mdp import MDP
-from registry import load_model
+# from registry import load_model
 
 _logger = logging.getLogger(f"{ALGORITHM_NAME}-inf")
 

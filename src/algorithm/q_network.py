@@ -17,7 +17,7 @@ from model import EpsilonDecay
 from model import ExperienceMemory
 from model import Transition
 from registry import plot_training_metrics
-from registry import save_model
+# from registry import save_model
 
 ALGORITHM_NAME = "q-network"
 TRAINED_MODEL_FILENAME = f"{ALGORITHM_NAME}.pth"

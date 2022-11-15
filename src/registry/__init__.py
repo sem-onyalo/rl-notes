@@ -3,7 +3,16 @@ import os
 
 import matplotlib.pyplot as plt
 
-def plot_training_metrics(algorithm:str, episodes:int, total_rewards:list, max_rewards:list, epsilon:list=None) -> None:
+from .local_registry import LocalRegistry
+from .registry import Registry
+
+def plot_training_metrics(
+    algorithm:str, 
+    episodes:int, 
+    total_rewards:list, 
+    max_rewards:list, 
+    epsilon:list=None) -> None:
+
     episode_list = list(range(1, episodes + 1))
 
     write_plot(
@@ -40,12 +49,6 @@ def write_plot(x_list, y_lists, plot_labels, x_label, y_label, title, filename):
     plt.close()
 
     write_bytes("./eval", filename, buffer)
-
-def save_model(filename:str, buffer:io.BytesIO) -> None:
-    write_bytes("./eval", filename, buffer)
-
-def load_model(filename:str) -> io.BytesIO:
-    return read_bytes("./eval", filename)
 
 def write_bytes(root:str, filename:str, buffer:io.BytesIO):
     os.makedirs(root, exist_ok=True)
