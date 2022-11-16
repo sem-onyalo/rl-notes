@@ -62,12 +62,6 @@ class AlgorithmNet(Algorithm):
 
         return nn.Sequential(*net_layers)
 
-    # def state_to_tensor(self, state:object):
-    #     if isinstance(state, int) or isinstance(state, float):
-    #         state = np.expand_dims([state], axis=0)
-
-    #     return torch.tensor(state, dtype=torch.float32, device=self.device)
-
     def transitions_to_batches(self, transitions):
         batch = list(zip(*transitions))
         states = batch[0]

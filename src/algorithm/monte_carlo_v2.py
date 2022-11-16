@@ -2,15 +2,14 @@ import io
 import json
 import logging
 import random
-from datetime import datetime
 from typing import DefaultDict, List
-from uuid import uuid4
 
 import numpy as np
 
 from .algorithm import Algorithm
 from mdp import MDP
 from model import ExperienceMemory
+from model import RunHistory
 from model import Transition
 from registry import Registry
 
@@ -24,24 +23,24 @@ class TabularFunctionV2:
             self.load_from_mdp(kwargs["mdp"])
 
     def load_from_mdp(self, mdp:MDP) -> None:
-        self.value_map = {
-            state: np.asarray([0.] * mdp.n_actions)
-            for state in range(0, mdp.n_states)
-        }
+        self.value_map = {}
+        self.n_actions = mdp.n_actions
 
     def load_from_buffer(self, buffer:io.BytesIO) -> None:
         state_dict = json.loads(buffer.getvalue())
         self.value_map = {}
         for state in state_dict:
-            self.value_map[int(state)] = np.asarray(state_dict[state])
+            self.value_map[state] = np.asarray(state_dict[state])
 
-    def __call__(self, state:int) -> np.ndarray:
+    def __call__(self, state:str) -> np.ndarray:
+        self.lazy_load(state)
         return self.value_map[state]
 
-    def get(self, state:int, action:int) -> float:
+    def get(self, state:str, action:int) -> float:
         return self.__call__(state)[action]
 
-    def update(self, state:int, action:int, value:float) -> None:
+    def update(self, state:str, action:int, value:float) -> None:
+        self.lazy_load(state)
         self.value_map[state][action] = value
 
     def state_dict(self) -> DefaultDict:
@@ -49,6 +48,10 @@ class TabularFunctionV2:
         for state in self.value_map:
             state_dict[state] = list(self.value_map[state])
         return json.dumps(state_dict, indent=4).encode("utf-8")
+
+    def lazy_load(self, state:str) -> None:
+        if not state in self.value_map:
+            self.value_map[state] = np.asarray([0.] * self.n_actions)
 
 class PolicyV2:
     def __init__(self, mdp:MDP, function:TabularFunctionV2, epsilon:float, decay_type:str, decay_rate:float=None, epsilon_floor:float=None) -> None:
@@ -74,27 +77,6 @@ class PolicyV2:
             self.epsilon = 1 / value
         elif self.decay_type == "exp":
             raise Exception("Exponential decay not yet implemented.")
-
-class RunHistory:
-    def __init__(self, episodes:int) -> None:
-        self.run_id = self.new_run_id()
-        self.episodes = episodes
-        self.total_rewards = []
-        self.max_rewards = []
-        self.epsilon = []
-        self.visits = {}
-        self.max_reward = None
-        self.steps = 0
-
-    def add(self, total_reward:float, epsilon:float) -> None:
-        self.max_reward = total_reward if self.max_reward == None or total_reward > self.max_reward else self.max_reward
-        self.total_rewards.append(total_reward)
-        self.max_rewards.append(self.max_reward)
-        self.epsilon.append(epsilon)
-
-    def new_run_id(self) -> str:
-        timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-        return f"{timestamp}-{uuid4()}"
 
 class MonteCarloV2(Algorithm):
     trained_model_filename = "monte-carlo.json"
@@ -154,11 +136,13 @@ class MonteCarloV2(Algorithm):
         _logger.info(f"{episode}> init state: {state}")
 
         while not is_terminal:
-            action = self.policy.get_stochastic(state)
+            transformed_state = self.transform_state(state)
 
-            reward, next_state, is_terminal = self.mdp.step(action)
+            action = self.policy.get_stochastic(transformed_state)
 
-            self.update_history(state, action, next_state, reward, visits, rewards)
+            reward, next_state, is_terminal, _ = self.mdp.step(action)
+
+            self.update_history(transformed_state, action, next_state, reward, visits, rewards)
 
             state = next_state
 
@@ -175,6 +159,15 @@ class MonteCarloV2(Algorithm):
                 break
 
         return rewards, total_reward
+
+    def transform_state(self, state:object) -> str:
+        if isinstance(state, int):
+            return str(state)
+        elif isinstance(state, np.ndarray):
+            assert state.ndim == 1, f"{ALGORITHM_NAME} currently only supports 1 dim numpy array, supplied array is {state.ndim}"
+            return ",".join(list(map(str, state)))
+        else:
+            raise Exception(f"{ALGORITHM_NAME} currently does not support {type(state)} state types")
 
     def update_history(self, state:int, action:int, next_state:int, reward:float, visits:DefaultDict[str,int], rewards:DefaultDict[str,List[int]]) -> None:
         if not (state, action) in visits:

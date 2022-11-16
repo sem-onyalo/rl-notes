@@ -6,6 +6,10 @@ URDF_PATH = "racecar/racecar_differential.urdf"
 
 _logger = logging.getLogger("mit-racecar")
 
+class CarOptions:
+    start_position:list
+    start_orientation:list
+
 class ConstraintConfig:
     value_1:int
     value_2:int
@@ -67,14 +71,14 @@ class MitRacecar:
             else:
                 self.bullet_client.changeConstraint(constraint, gearRatio=config.gear_aux_link, maxForce=max_force)
 
-    def reset(self, options=None):
-        start_pos = options["start_pos"] if options != None and "start_pos" in options else self.start_pos
-        start_orn = options["start_orn"] if options != None and "start_orn" in options else self.start_orn
+    def reset(self, options:CarOptions=None):
+        start_position = self.start_pos if options == None else options.start_position
+        start_orientation = self.start_orn if options == None else options.start_orientation
 
         car = self.bullet_client.loadURDF(
             os.path.join(self.urdf_root_path, URDF_PATH),
-            basePosition=start_pos,
-            baseOrientation=start_orn,
+            basePosition=start_position,
+            baseOrientation=start_orientation,
             useFixedBase=False
         )
 

@@ -2,12 +2,13 @@ import io
 import os
 
 from .registry import Registry
+from model import RunHistory
 
 class LocalRegistry(Registry):
     def __init__(self, eval_root: str) -> None:
         self.eval_root = eval_root if eval_root[0] == "." else f".{eval_root}"
 
-    def save_run_history(self, algorithm:str, run_history) -> None:
+    def save_run_history(self, algorithm:str, run_history:RunHistory) -> None:
         episode_list = list(range(1, run_history.episodes + 1))
 
         self.write_plot(

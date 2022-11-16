@@ -1,7 +1,9 @@
 import random
 from typing import Tuple
 
-class StudentMDPV2:
+from .mdp import MDP
+
+class StudentMDPV2(MDP):
     """
     This class represents the student MDP example.
     """
@@ -51,11 +53,11 @@ class StudentMDPV2:
         self.current_state = 0
         return self.current_state
 
-    def step(self, action:int) -> Tuple[float, int, bool]:
+    def step(self, action:int) -> Tuple[float, int, bool, dict]:
         reward, next_state = self.get_reward_and_next_state(action)
         is_terminal = next_state == self.terminal_state
         self.current_state = next_state
-        return reward, next_state, is_terminal
+        return reward, next_state, is_terminal, None
 
     def get_reward_and_next_state(self, action:int) -> Tuple[float, int]:
         if not action in self.state_actions[self.current_state]:

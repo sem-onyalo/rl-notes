@@ -34,7 +34,7 @@ class AlgorithmCreator:
         elif mdp_name == RACECAR_MDP:
             mdp = RacecarBulletGymMDP()
         elif mdp_name == DRIFT_CAR_MDP:
-            mdp = DriftCarMDP(show_visual=args.render, max_step_count=args.max_steps)
+            mdp = DriftCarMDP(args.boundary, args.render, args.discrete, args.max_steps, randomize_start_position=True)
         else:
             raise Exception(f"The MDP '{mdp_name}' is invalid or not yet implemented")
 
@@ -68,7 +68,6 @@ class AlgorithmCreator:
                 algorithm = QNetworkInf(mdp, args.layers)
             else:
                 epsilon_decay = EpsilonDecayGlie(args.epsilon)
-                # epsilon_decay = EpsilonDecayExp(args.epsilon, args.epsilon_end, args.epsilon_decay_rate)
                 algorithm = QNetwork(mdp, epsilon_decay, args.layers, discount_rate=args.discount_rate, change_rate=args.change_rate, max_episodes=args.episodes, batch_size=args.batch_size)
         elif algorithm_name == MONTE_CARLO_POLICY_GRADIENT:
             if args.inference:
