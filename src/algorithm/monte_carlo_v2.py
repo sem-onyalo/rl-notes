@@ -79,7 +79,7 @@ class PolicyV2:
             raise Exception("Exponential decay not yet implemented.")
 
 class MonteCarloV2(Algorithm):
-    trained_model_filename = "monte-carlo.json"
+    model_file_ext = "json"
 
     def __init__(
         self, 
@@ -125,7 +125,7 @@ class MonteCarloV2(Algorithm):
 
         if self.registry != None and max_episodes > 0:
             self.registry.save_run_history(ALGORITHM_NAME, self.run_history)
-            self.save_model()
+            self.save_model(self.run_history.run_id)
 
     def run_episode(self, episode:int, visits:dict):
         rewards = {}
@@ -201,20 +201,21 @@ class MonteCarloV2(Algorithm):
         _logger.info(f"total reward: {total_reward}")
         _logger.info(f"max reward: {max_reward}")
 
-    def save_model(self) -> None:
+    def save_model(self, run_id:str) -> None:
         buffer = io.BytesIO()
         model_state_dict = self.function.state_dict()
         buffer.write(model_state_dict)
-        self.registry.save_model(self.trained_model_filename, buffer)
+        self.registry.save_model(f"{ALGORITHM_NAME}-{run_id}.{self.model_file_ext}", buffer)
 
 class MonteCarloV2Inf(MonteCarloV2):
-    def __init__(self, mdp:MDP, policy:PolicyV2, registry:Registry, max_steps=5000) -> None:
+    def __init__(self, mdp:MDP, policy:PolicyV2, registry:Registry, run_id:str, max_steps=5000) -> None:
         self.mdp = mdp
         self.policy = policy
+        self.run_id = run_id
         self.registry = registry
         self.max_steps = max_steps
         self.memory = ExperienceMemory(0)
-        self.policy.function.load_from_buffer(registry.load_model(self.trained_model_filename))
+        self.policy.function.load_from_buffer(registry.load_model(f"{ALGORITHM_NAME}-{self.run_id}.{self.model_file_ext}"))
 
     def run(self):
         steps = 0

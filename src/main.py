@@ -19,10 +19,11 @@ def get_runtime_args():
     parser.add_argument("-e", "--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
     parser.add_argument("-s", "--max-steps", type=int, default=5000, help="The maximum number of steps before the episode is considered terminal.")
     parser.add_argument("-d", "--decay-type", type=str, default=None, help="The epsilon decay function to use.")
-    parser.add_argument("-i", "--inference", action="store_true")
     parser.add_argument("--registry-type", type=str, default=LOCAL_REGISTRY, help="The type of registry to use for reading and writing artifacts.")
     parser.add_argument("--eval-root", type=str, default="/eval", help="The root directory where training artifacts are written to.")
     parser.add_argument("--data-root", type=str, default="/data", help="The root directory where model artifacts are read from.")
+    parser.add_argument("-i", "--inference", action="store_true")
+    parser.add_argument("--run-id", type=str, help="The run id to reference when loading a model for inference.")
 
     algorithm_parser = parser.add_subparsers(dest="algorithm")
     algorithm_parsers = []

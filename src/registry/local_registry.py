@@ -18,7 +18,7 @@ class LocalRegistry(Registry):
             x_label="Episode",
             y_label="Reward",
             title=f"Training: Rewards ({algorithm})",
-            filename=f"plot-training-{algorithm}-rewards.png"
+            filename=f"{algorithm}-{run_history.run_id}-rewards.png"
         )
 
         if isinstance(run_history.epsilon, list) and len(run_history.epsilon) > 0:
@@ -29,7 +29,7 @@ class LocalRegistry(Registry):
                 x_label="Episode",
                 y_label="Epsilon",
                 title="Epsilon Decay",
-                filename=f"plot-training-{algorithm}-epsilon.png"
+                filename=f"{algorithm}-{run_history.run_id}-epsilon.png"
             )
 
     def write_bytes(self, root:str, filename:str, buffer:io.BytesIO):

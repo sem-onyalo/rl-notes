@@ -54,7 +54,7 @@ class AlgorithmCreator:
             if args.inference:
                 function = TabularFunctionV2()
                 policy = PolicyV2(mdp, function, args.epsilon, args.decay_type)
-                algorithm = MonteCarloV2Inf(mdp, policy, registry, args.max_steps)
+                algorithm = MonteCarloV2Inf(mdp, policy, registry, args.run_id, args.max_steps)
             else:
                 function = TabularFunctionV2(mdp=mdp)
                 policy = PolicyV2(mdp, function, args.epsilon, args.decay_type)
