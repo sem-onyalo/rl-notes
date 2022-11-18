@@ -34,7 +34,7 @@ class AlgorithmCreator:
         elif mdp_name == RACECAR_MDP:
             mdp = RacecarBulletGymMDP()
         elif mdp_name == DRIFT_CAR_MDP:
-            mdp = DriftCarMDP(args.boundary, args.render, args.discrete, args.max_steps, randomize_start_position=True)
+            mdp = DriftCarMDP(args.boundary, args.render, args.discrete, args.max_steps)
         else:
             raise Exception(f"The MDP '{mdp_name}' is invalid or not yet implemented")
 

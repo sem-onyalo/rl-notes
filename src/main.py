@@ -1,5 +1,6 @@
 import argparse
 import logging
+import random
 
 from algorithm import AlgorithmCreator
 from constants import *
@@ -24,6 +25,7 @@ def get_runtime_args():
     parser.add_argument("--data-root", type=str, default="/data", help="The root directory where model artifacts are read from.")
     parser.add_argument("-i", "--inference", action="store_true")
     parser.add_argument("--run-id", type=str, help="The run id to reference when loading a model for inference.")
+    parser.add_argument("--seed", type=int, default=87432995)
 
     algorithm_parser = parser.add_subparsers(dest="algorithm")
     algorithm_parsers = []

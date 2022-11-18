@@ -5,6 +5,7 @@ class RunHistory:
     def __init__(self, episodes:int) -> None:
         self.run_id = self.new_run_id()
         self.episodes = episodes
+        self.terminal_info = {}
         self.total_rewards = []
         self.max_rewards = []
         self.epsilon = []

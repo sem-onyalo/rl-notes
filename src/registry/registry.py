@@ -26,6 +26,11 @@ class Registry:
     def load_model(self, filename:str) -> io.BytesIO:
         return self.read_bytes(self.eval_root, filename)
 
+    def save_object(self, filename:str, obj:object) -> None:
+        buffer = io.BytesIO()
+        buffer.write(obj)
+        self.write_bytes(self.eval_root, filename, buffer)
+
     def save_run_history(self, algorithm:str, run_history) -> None:
         pass
 

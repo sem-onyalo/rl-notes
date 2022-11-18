@@ -1,13 +1,13 @@
-import io
-import json
-import logging
-import random
-from typing import DefaultDict, List
+from collections import OrderedDict
+from itertools import groupby
 
 import numpy as np
 
 from .algorithm import Algorithm
+from function import PolicyV2
+from function import TabularFunctionV2
 from mdp import MDP
+from mdp import DriftCarMDP
 from model import ExperienceMemory
 from model import RunHistory
 from model import Transition
@@ -15,71 +15,10 @@ from registry import Registry
 
 ALGORITHM_NAME = "monte-carlo-v2"
 
-_logger = logging.getLogger(ALGORITHM_NAME)
-
-class TabularFunctionV2:
-    def __init__(self, **kwargs) -> None:
-        if "mdp" in kwargs:
-            self.load_from_mdp(kwargs["mdp"])
-
-    def load_from_mdp(self, mdp:MDP) -> None:
-        self.value_map = {}
-        self.n_actions = mdp.n_actions
-
-    def load_from_buffer(self, buffer:io.BytesIO) -> None:
-        state_dict = json.loads(buffer.getvalue())
-        self.value_map = {}
-        for state in state_dict:
-            self.value_map[state] = np.asarray(state_dict[state])
-
-    def __call__(self, state:str) -> np.ndarray:
-        self.lazy_load(state)
-        return self.value_map[state]
-
-    def get(self, state:str, action:int) -> float:
-        return self.__call__(state)[action]
-
-    def update(self, state:str, action:int, value:float) -> None:
-        self.lazy_load(state)
-        self.value_map[state][action] = value
-
-    def state_dict(self) -> DefaultDict:
-        state_dict = {}
-        for state in self.value_map:
-            state_dict[state] = list(self.value_map[state])
-        return json.dumps(state_dict, indent=4).encode("utf-8")
-
-    def lazy_load(self, state:str) -> None:
-        if not state in self.value_map:
-            self.value_map[state] = np.asarray([0.] * self.n_actions)
-
-class PolicyV2:
-    def __init__(self, mdp:MDP, function:TabularFunctionV2, epsilon:float, decay_type:str, decay_rate:float=None, epsilon_floor:float=None) -> None:
-        self.n_actions = mdp.n_actions
-        self.function = function
-        self.epsilon = epsilon
-        self.decay_type = decay_type
-        self.decay_rate = decay_rate
-        self.epsilon_floor = epsilon_floor
-
-    def __call__(self, state:int) -> int:
-        return np.argmax(self.function(state)) # return the optimal (max) action
-
-    def get_stochastic(self, state:int) -> int:
-        do_explore = random.random() < self.epsilon
-        if do_explore:
-            return random.randint(0, self.n_actions - 1)
-        else:
-            return self.__call__(state)
-
-    def decay(self, value:float) -> None:
-        if self.decay_type == "glie": # TODO get from constants
-            self.epsilon = 1 / value
-        elif self.decay_type == "exp":
-            raise Exception("Exponential decay not yet implemented.")
-
 class MonteCarloV2(Algorithm):
-    model_file_ext = "json"
+    """
+    This class represents the GLIE (Greedy in the Limit with Infinite Exploration) Monte-Carlo control algorithm.
+    """
 
     def __init__(
         self, 
@@ -91,7 +30,6 @@ class MonteCarloV2(Algorithm):
         max_episodes=1000, 
         memory_capacity=10000, 
         max_steps_per_episode=5000) -> None:
-
         super().__init__(ALGORITHM_NAME)
 
         self.mdp = mdp
@@ -102,6 +40,7 @@ class MonteCarloV2(Algorithm):
         self.max_episodes = max_episodes
         self.max_steps_per_episode = max_steps_per_episode
         self.memory = ExperienceMemory(memory_capacity)
+        self.init_experimental_stuff()
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -109,11 +48,9 @@ class MonteCarloV2(Algorithm):
         self.run_history = RunHistory(max_episodes)
 
         for episode in range(1, max_episodes + 1):
-            _logger.info("-" * 50)
-            _logger.info(f"Episode {episode}")
-            _logger.info("-" * 50)
+            self.init_new_episode(episode)
 
-            rewards, total_reward = self.run_episode(episode, self.run_history.visits)
+            rewards, total_reward = self.run_episode(episode)
 
             self.update_function(self.run_history.visits, rewards)
 
@@ -123,26 +60,28 @@ class MonteCarloV2(Algorithm):
 
             self.log_episode_metrics(total_reward, self.run_history.max_reward)
 
-        if self.registry != None and max_episodes > 0:
-            self.registry.save_run_history(ALGORITHM_NAME, self.run_history)
-            self.save_model(self.run_history.run_id)
+            self.do_experimental_end_of_episode_stuff(episode=episode, reward=total_reward)
 
-    def run_episode(self, episode:int, visits:dict):
+        self.save(max_episodes)
+
+        self.do_experimental_end_of_run_stuff()
+
+    def run_episode(self, episode:int):
         rewards = {}
         total_reward = 0
         is_terminal = False
         state = self.mdp.start()
         episode_start = self.run_history.steps
-        _logger.info(f"{episode}> init state: {state}")
+        self.logger.info(f"{episode}> init state: {state}")
 
         while not is_terminal:
             transformed_state = self.transform_state(state)
 
             action = self.policy.get_stochastic(transformed_state)
 
-            reward, next_state, is_terminal, _ = self.mdp.step(action)
+            reward, next_state, is_terminal, info = self.mdp.step(action)
 
-            self.update_history(transformed_state, action, next_state, reward, visits, rewards)
+            self.update_history(transformed_state, action, next_state, reward, rewards, info)
 
             state = next_state
 
@@ -152,44 +91,23 @@ class MonteCarloV2(Algorithm):
 
             steps = self.run_history.steps - episode_start
 
-            _logger.info(f"{episode}> state: {state}, action: {action}, reward: {reward}, steps: {steps}")
+            self.logger.info(f"{episode}> state: {state}, action: {action}, reward: {reward}, steps: {steps}")
 
             if steps >= self.max_steps_per_episode:
-                _logger.info(f"max steps for episode reached")
+                self.logger.info(f"max steps for episode reached")
                 break
+
+        self.logger.info(f"{episode}> terminal reason: {info['reason']}")
 
         return rewards, total_reward
 
-    def transform_state(self, state:object) -> str:
-        if isinstance(state, int):
-            return str(state)
-        elif isinstance(state, np.ndarray):
-            assert state.ndim == 1, f"{ALGORITHM_NAME} currently only supports 1 dim numpy array, supplied array is {state.ndim}"
-            return ",".join(list(map(str, state)))
-        else:
-            raise Exception(f"{ALGORITHM_NAME} currently does not support {type(state)} state types")
-
-    def update_history(self, state:int, action:int, next_state:int, reward:float, visits:DefaultDict[str,int], rewards:DefaultDict[str,List[int]]) -> None:
-        if not (state, action) in visits:
-            visits[(state, action)] = 0
-
-        if not (state, action) in rewards:
-            rewards[(state, action)] = []
-
-        visits[(state, action)] += 1
-
-        for key in rewards:
-            rewards[key].append(reward)
-
-        self.memory.push(Transition(state, action, next_state, reward))
-
     def update_function(self, visits:dict, rewards:dict) -> None:
         for (state, action) in rewards:
-            visit_count = visits[(state, action)]
-            transition_rewards = rewards[(state, action)]
-            current_value = self.function.get(state, action)
-            total_reward = self.get_total_discounted_reward(transition_rewards)
-            new_value = current_value + (1 / visit_count * (total_reward - current_value))
+            value = self.function.get(state, action)
+            state_action_visits = visits[(state, action)]
+            state_action_rewards = rewards[(state, action)]
+            total_reward = self.get_total_discounted_reward(state_action_rewards)
+            new_value = value + (1 / state_action_visits * (total_reward - value))
             self.function.update(state, action, new_value)
 
     def get_total_discounted_reward(self, rewards):
@@ -198,51 +116,134 @@ class MonteCarloV2(Algorithm):
         return sum([self.discount_rate**step * reward for step, reward in enumerate(rewards)])
 
     def log_episode_metrics(self, total_reward:float, max_reward:float) -> None:
-        _logger.info(f"total reward: {total_reward}")
-        _logger.info(f"max reward: {max_reward}")
+        self.logger.info(f"total reward: {total_reward}")
+        self.logger.info(f"max reward: {max_reward}")
 
-    def save_model(self, run_id:str) -> None:
-        buffer = io.BytesIO()
-        model_state_dict = self.function.state_dict()
-        buffer.write(model_state_dict)
-        self.registry.save_model(f"{ALGORITHM_NAME}-{run_id}.{self.model_file_ext}", buffer)
+    def save(self, max_episodes:int):
+        if self.registry != None and max_episodes > 0:
+            self.registry.save_run_history(self.name, self.run_history)
+            self.save_model(self.run_history.run_id)
 
-class MonteCarloV2Inf(MonteCarloV2):
+    def init_experimental_stuff(self):
+        self.states_explored_pct = []
+        self.starting_states_explored_pct = []
+        # self.states_explored_count = OrderedDict()
+        # self.starting_states_explored_count = OrderedDict()
+        self.total_rewards_per_episode = []
+        self.mean_total_rewards_per_episode = []
+        mdp:DriftCarMDP = self.mdp
+
+        # for x in range(-mdp.boundary, mdp.boundary + 1):
+        #     for y in range(-mdp.boundary, mdp.boundary + 1):
+        #         for a in mdp.discrete_orientations:
+        #             self.states_explored_count[(x, y, a)] = 0
+        #             self.starting_states_explored_count[(x, y, a)] = 0
+
+    def do_experimental_end_of_episode_stuff(self, *args, **kwargs):
+        episode:int = kwargs["episode"]
+        reward:float = kwargs["reward"]
+        mdp:DriftCarMDP = self.mdp
+
+        explored_pct = round(len(self.policy) / mdp.n_discrete_state_space, 2)
+        self.states_explored_pct.append(explored_pct)
+
+        starting_states_explored_count = { k: len(list(g)) for k, g in groupby(sorted(mdp.starting_positions))}
+        starting_explored_pct = round(len(starting_states_explored_count) / mdp.n_discrete_state_space, 2)
+        self.starting_states_explored_pct.append(starting_explored_pct)
+
+        # states_explored_count = { tuple(list(map(int, k.split(",")))[2:]): len(list(g)) for k, g in groupby(sorted(self.policy.get_states_visited()))}
+        # for k in states_explored_count:
+        #     if k not in self.states_explored_count:
+        #         self.logger.info(f"found state: {k}")
+        #         quit()
+        #     self.states_explored_count[k] = states_explored_count[k]
+        # for k in starting_states_explored_count:
+        #     if k not in self.starting_states_explored_count:
+        #         self.logger.info(f"found state: {k}")
+        #         quit()
+        #     self.starting_states_explored_count[k] = starting_states_explored_count[k]
+
+        self.total_rewards_per_episode.append(reward)
+        self.mean_total_rewards_per_episode.append(np.asarray(self.total_rewards_per_episode).mean())
+
+        self.registry.write_plot(
+            x_list=list(range(1, episode + 1)),
+            y_lists=[self.states_explored_pct, self.starting_states_explored_pct],
+            plot_labels=["States explored", "Starting states explored"],
+            x_label="Episode",
+            y_label="Exploration %",
+            title=f"Training: State Space Explored % ({self.name})",
+            filename=f"{self.name}-{self.run_history.run_id}-state-space-explored.png"
+        )
+
+        # self.registry.write_plot(
+        #     x_list=list(range(0, mdp.n_discrete_state_space)),
+        #     y_lists=[self.states_explored_count.values(), self.starting_states_explored_count.values()],
+        #     plot_labels=["States explored count", "Starting states explored count"],
+        #     x_label="States",
+        #     y_label="Count",
+        #     title=f"Training: State Exploration Count ({self.name})",
+        #     filename=f"{self.name}-{self.run_history.run_id}-state-exploration-count.png"
+        # )
+
+        self.registry.write_plot(
+            x_list=list(range(1, episode + 1)),
+            y_lists=[self.total_rewards_per_episode, self.mean_total_rewards_per_episode],
+            plot_labels=["Total reward", "Total mean reward"],
+            x_label="Episode",
+            y_label="Reward",
+            title=f"Training: Episode Rewards ({self.name})",
+            filename=f"{self.name}-{self.run_history.run_id}-total-reward.png"
+        )
+
+    def do_experimental_end_of_run_stuff(self, *args, **kwargs):
+        self.logger.info(f"terminal info: {self.run_history.terminal_info}")
+
+class MonteCarloV2Inf(Algorithm):
     def __init__(self, mdp:MDP, policy:PolicyV2, registry:Registry, run_id:str, max_steps=5000) -> None:
+        super().__init__(ALGORITHM_NAME)
+
+        assert run_id != None, "Please supply the run id"
+
         self.mdp = mdp
         self.policy = policy
         self.run_id = run_id
         self.registry = registry
         self.max_steps = max_steps
         self.memory = ExperienceMemory(0)
-        self.policy.function.load_from_buffer(registry.load_model(f"{ALGORITHM_NAME}-{self.run_id}.{self.model_file_ext}"))
+        self.policy.function.load_from_buffer(registry.load_model(f"{self.name}-{self.run_id}.{self.model_file_ext}"))
 
     def run(self):
         steps = 0
-        total_reward = 0
-        is_terminal = False
-        state = self.mdp.start()
-        _logger.info(f"init state: {state}")
+        while steps < self.max_steps:
+            total_reward = 0
+            is_terminal = False
+            state = self.mdp.start()
+            self.logger.info(f"init state: {state}")
+            while not is_terminal:
+                transformed_state = self.transform_state(state)
 
-        while not is_terminal:
-            action = self.policy(state)
+                # TODO: since function value map is lazy loaded we may get actions that
+                #       haven't been see during training, which means we would be getting
+                #       an arbitrary action back. It would probably be best to handle this
+                #       somehow.
+                action = self.policy(transformed_state)
 
-            reward, next_state, is_terminal = self.mdp.step(action)
+                reward, next_state, is_terminal, info = self.mdp.step(action)
 
-            self.memory.push(Transition(state, action, next_state, reward))
+                self.memory.push(Transition(state, action, next_state, reward))
 
-            steps += 1
+                total_reward += reward
 
-            state = next_state
+                state = next_state
 
-            total_reward += reward
+                steps += 1
 
-            _logger.info(f"state: {state}, action: {action}, reward: {reward}")
+                self.logger.info(f"state: {state}, action: {action}, reward: {reward}")
 
-            if steps >= self.max_steps:
-                _logger.info(f"Aborting, max steps reached!")
-                return
+            self.logger.info(f"terminal reason: {info['reason']}")
+
+        self.logger.info(f"Max steps reached, exiting run!")
+        # self.logger.info(f"Total reward: {reward}")
 
         # TODO: write memory to csv file
-
-        _logger.info(f"Total reward: {reward}")
