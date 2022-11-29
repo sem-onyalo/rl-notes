@@ -9,7 +9,25 @@ Reinforcement learning is learning what to do (mapping situations to actions) so
 * Supervised learning: learning from a training set of labeled examples.
 * Unsupervised learning: Learning from finding hidden structures in unlabeled data.
 
-Reinforcement learning is the closest of all the machine learning types to the way humans and other animals learn and many of the core algorithms were originally inspired by biological learning systems.
+### Why Reinforcement Learning?
+
+Reinforcement learning is a fully-realized implementation of all components of STEM (i.e. science, technology, engineering, and mathematics). The enthusiasm for reinforcement learning is best depicted from the excerpt below [1].
+
+```
+One of the most exciting aspects of modern reinforcement learning is its substantive
+and fruitful interactions with other engineering and scientific disciplines. Reinforcement
+learning is part of a decades-long trend within artificial intelligence and machine learning
+toward greater integration with statistics, optimization, and other mathematical subjects.
+For example, the ability of some reinforcement learning methods to learn with parameterized approximators addresses the classical “curse of dimensionality” in operations research
+and control theory. More distinctively, reinforcement learning has also interacted strongly
+with psychology and neuroscience, with substantial benefits going both ways. Of all the
+forms of machine learning, reinforcement learning is the closest to the kind of learning
+that humans and other animals do, and many of the core algorithms of reinforcement
+learning were originally inspired by biological learning systems. Reinforcement learning
+has also given back, both through a psychological model of animal learning that better
+matches some of the empirical data, and through an influential model of parts of the
+brain’s reward system.
+```
 
 ## Problem Formulation
 
@@ -25,6 +43,8 @@ The agent-environment interface is a way to formalize the reinforcement learning
 
 ## Solution Formulation
 
+Building a solution to the reinforcement learning problem requires an understanding of the components required to teach the agent to achieve its goal.
+
 ![Code Structure](../code-structure.png)
 
 * Policy: defines how the agent should behave at a given time. Essentially, it is a mapping of states to actions.
@@ -35,11 +55,49 @@ The agent-environment interface is a way to formalize the reinforcement learning
 * Markov Decision Process (MDP): a way to model the sequential decision making process, which can be thought of as mathematical equation that the agent needs to solve.
 * Algorithm: determines _how_ the agent will learn how to solve the MDP (e.g. Monte-Carlo, DQN, Actor-Critic).
 
-TODO: define these things
+## Algorithms: Basic
 
-* bellman equation
+There are a number of algorithms that the agent can apply to solve the MDP, each with their own trade-offs (e.g. time to learn, robustness of learning).
+
+### Bellman Equation
+
+The Bellman equation is at the heart of reinforcement learning solutions. It is a dynmaic programming method defined by the immediate reward plus the discounted sum of all future rewards.
+
+![Bellman Optimality Equation for Q*](../q-star-bellman-optimality-equation.png)
+
+In reinforcement learning, we solve the MDP by finding the function (i.e. Q*) that gives us the correct value for each state-action pair. We calculate the values by using the _returns_ at every time-step.
+
+![Return](../return-gt.png)
+
+* Return: the total discounted reward from time-step _t_.
+* V𝜋: the value function defining the expected return at state _s_ when following policy 𝜋.
+* Q𝜋: the action-value function defining the expected return at state _s_ and taking action _a_ when following policy 𝜋.
+* V*: the optimal value function defining the expected return at state _s_.
+* Q*: the optimal action-value function defining the expected return at state _s_ and taking action _a_.
+
+### Monte-Carlo
+
+_TODO_
+
+### Q-Learning
+
+_TODO_
+
+## Algorithms: Practical
+
+### Q-Network
+
+_TODO_
+
+### Monte-Carlo Policy Gradient
+
+_TODO_
+
+### Actor-Critic
+
+_TODO_
 
 ## References
 
-* Richard S. Sutton and Andrew G. Barto. Reinforcement Learning: An Introduction. The MIT Press, 2018.
-* DeepMind x UCL | Introduction to Reinforcement Learning 2015. https://www.youtube.com/playlist?list=PLqYmG7hTraZDM-OYHWgPebj2MfCFzFObQ
+1. Richard S. Sutton and Andrew G. Barto. Reinforcement Learning: An Introduction. The MIT Press, 2018.
+2. DeepMind x UCL | Introduction to Reinforcement Learning 2015. https://www.youtube.com/playlist?list=PLqYmG7hTraZDM-OYHWgPebj2MfCFzFObQ
