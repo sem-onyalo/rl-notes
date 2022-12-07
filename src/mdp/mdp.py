@@ -10,3 +10,6 @@ class MDP:
 
     def step(self, action:int) -> Tuple[float, int, bool, Dict[str, object]]:
         pass
+
+    def set_operator(self, operator:str) -> None:
+        pass

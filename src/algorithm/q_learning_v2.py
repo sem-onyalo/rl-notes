@@ -69,7 +69,7 @@ class QLearningV2(Algorithm):
         while not is_terminal:
             transformed_state = self.transform_state(state)
 
-            action = self.policy.get_stochastic(transformed_state)
+            action = self.policy.choose_action(transformed_state)
 
             reward, next_state, is_terminal, _ = self.mdp.step(action)
 

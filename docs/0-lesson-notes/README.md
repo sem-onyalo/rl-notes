@@ -61,13 +61,19 @@ There are a number of algorithms that the agent can apply to solve the MDP, each
 
 ### Bellman Equation
 
-The Bellman equation is at the heart of reinforcement learning solutions. It is a dynmaic programming method defined by the immediate reward plus the discounted sum of all future rewards.
+The Bellman equation is at the heart of reinforcement learning solutions. It is a dynmaic programming method defined as the value of all state-action pairs being the immediate reward plus the discounted sum of all future rewards.
 
 ![Bellman Optimality Equation for Q*](../q-star-bellman-optimality-equation.png)
 
 In reinforcement learning, we solve the MDP by finding the function (i.e. Q*) that gives us the correct value for each state-action pair. We calculate the values by using the _returns_ at every time-step.
 
 ![Return](../return-gt.png)
+
+It helps to conceptualize the value calculation by considering the backup diagram for a state-action transition. At every state we can take an action, which will lead us to some other state. We are trying to calculate which action will lead us to the state with the most value.
+
+![Value Iteration Backup Diagram](../backup-diagram-value-iteration.png)
+
+![Value Iteration Equation](../algorithm-optimal-value-iteration.png)
 
 * Return: the total discounted reward from time-step _t_.
 * V𝜋: the value function defining the expected return at state _s_ when following policy 𝜋.
@@ -77,7 +83,13 @@ In reinforcement learning, we solve the MDP by finding the function (i.e. Q*) th
 
 ### Monte-Carlo
 
-_TODO_
+The Monte-Carlo algorithm implements the Bellman Equation by calculating the incremental mean of the returns across all episodes.
+
+![Monte-Carlo Action-Value Calculation](../action-value-incremental-mean.png)
+
+Within each episode, every time a state-action pair is visited, the total discounted reward from that time-step _t_ to the end of the episode is tracked.
+
+![Monte-Carlo Total Discounted Reward](../total-discounted-reward.png)
 
 ### Q-Learning
 

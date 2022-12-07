@@ -1,8 +1,6 @@
 from .monte_carlo import MonteCarlo
 from .monte_carlo_v2 import MonteCarloV2
 from .monte_carlo_v2 import MonteCarloV2Inf
-from .monte_carlo_v2 import PolicyV2
-from .monte_carlo_v2 import TabularFunctionV2
 from .monte_carlo_policy_gradient import MonteCarloPolicyGradient
 from .monte_carlo_policy_gradient_inf import MonteCarloPolicyGradientInf
 from .policy import Policy
@@ -12,8 +10,11 @@ from .q_network_inf import QNetworkInf
 from .value_iteration import ValueIteration
 from constants import *
 from function import ActionValueFunctionTabular
+from function import PolicyV2
+from function import TabularFunctionV2
 from function import ValueFunctionTabular
 from mdp import DriftCarMDP
+from mdp import DriftCarMDPV2
 from mdp import RacecarBulletGymMDP
 from mdp import StudentMDP
 from mdp import StudentMDPV2
@@ -27,21 +28,9 @@ class AlgorithmCreator:
 
     @staticmethod
     def build(algorithm_name, mdp_name, args):
-        if mdp_name == STUDENT_MDP:
-            mdp = StudentMDP()
-        elif mdp_name == STUDENT_MDP_V2:
-            mdp = StudentMDPV2()
-        elif mdp_name == RACECAR_MDP:
-            mdp = RacecarBulletGymMDP()
-        elif mdp_name == DRIFT_CAR_MDP:
-            mdp = DriftCarMDP(args.boundary, args.render, args.discrete, args.max_steps)
-        else:
-            raise Exception(f"The MDP '{mdp_name}' is invalid or not yet implemented")
+        mdp = __class__.build_mdp(mdp_name, args)
 
-        if args.registry_type == LOCAL_REGISTRY:
-            registry = LocalRegistry(args.eval_root)
-        else:
-            raise Exception(f"The registry {args.registry_type} is invalid or not yet implemented")
+        registry = __class__.build_registry(args)
 
         if algorithm_name == VALUE_ITERATION:
             function = ValueFunctionTabular(mdp)
@@ -53,11 +42,11 @@ class AlgorithmCreator:
         elif algorithm_name == MONTE_CARLO_V2:
             if args.inference:
                 function = TabularFunctionV2()
-                policy = PolicyV2(mdp, function, args.epsilon, args.decay_type)
+                policy = PolicyV2(mdp, function, args.explore_type, args.epsilon, args.decay_type)
                 algorithm = MonteCarloV2Inf(mdp, policy, registry, args.run_id, args.max_steps)
             else:
                 function = TabularFunctionV2(mdp=mdp)
-                policy = PolicyV2(mdp, function, args.epsilon, args.decay_type)
+                policy = PolicyV2(mdp, function, args.explore_type, args.epsilon, args.decay_type)
                 algorithm = MonteCarloV2(mdp, function, policy, registry, args.discount_rate, args.episodes, max_steps_per_episode=args.max_steps)
         elif algorithm_name == Q_LEARNING:
             function = ActionValueFunctionTabular(mdp)
@@ -78,3 +67,29 @@ class AlgorithmCreator:
             raise Exception(f"The name '{algorithm_name}' is not a valid algorithm name.")
 
         return algorithm
+
+    @staticmethod
+    def build_mdp(mdp_name, args):
+        if mdp_name == STUDENT_MDP:
+            mdp = StudentMDP()
+        elif mdp_name == STUDENT_MDP_V2:
+            mdp = StudentMDPV2()
+        elif mdp_name == RACECAR_MDP:
+            mdp = RacecarBulletGymMDP()
+        elif mdp_name == DRIFT_CAR_MDP:
+            mdp = DriftCarMDP(args.boundary, args.render, args.discrete, args.max_steps)
+        elif mdp_name == DRIFT_CAR_MDP_V2:
+            mdp = DriftCarMDPV2(args.path_radius, args.boundary, args.render, args.discrete, args.max_steps)
+        else:
+            raise Exception(f"The MDP '{mdp_name}' is invalid or not yet implemented")
+
+        return mdp
+
+    @staticmethod
+    def build_registry(args):
+        if args.registry_type == LOCAL_REGISTRY:
+            registry = LocalRegistry(args.eval_root)
+        else:
+            raise Exception(f"The registry {args.registry_type} is invalid or not yet implemented")
+
+        return registry
