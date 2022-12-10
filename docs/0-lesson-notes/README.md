@@ -93,7 +93,7 @@ It helps to conceptualize the value calculation by considering the backup diagra
 
 ### Monte-Carlo
 
-The Monte-Carlo algorithm implements the Bellman Equation by calculating the incremental mean of the returns across all episodes.
+The Monte-Carlo algorithm updates the action-value function for every visited state-action pair at the end of every episode. It updates the function by calculating the incremental mean of the returns across all episodes for every visited state-action pair.
 
 ![Monte-Carlo Action-Value Calculation](../action-value-incremental-mean.png)
 
@@ -101,9 +101,35 @@ Within each episode, every time a state-action pair is visited, the total discou
 
 ![Monte-Carlo Total Discounted Reward](../total-discounted-reward.png)
 
+#### Train
+
+```
+pipenv run python src/game.py grid-target monte-carlo --discount-rate .8
+```
+
+#### Run
+
+```
+pipenv run python src/game.py --run-id <run-id> grid-target --display --trail monte-carlo
+```
+
 ### Q-Learning
 
-_TODO_
+The Q-Learning algorithm updates the action-value function for each state-action pair after every time step. The algorithm uses to policies (known as an off-policy algorithm). There is a behaviour policy which dictates what actions the agent will take and a target policy which is used to update the action-value function. The behaviour policy picks actions using an exploration/exploitation strategy. The target policy picks the action from a state with the maximum value.
+
+![Q-Learning Off-Policy Algorithm](../q-learning-equation-and-backup-diagram.png)
+
+#### Train
+
+```
+pipenv run python src/game.py grid-target q-learning --discount-rate .7 --change-rate .2
+```
+
+#### Run
+
+```
+pipenv run python src/game.py --run-id <run-id> grid-target --display --trail q-learning
+```
 
 ## Algorithms: Practical
 

@@ -1,8 +1,6 @@
 import time
 from datetime import datetime
 
-import numpy as np
-
 from .algorithm import Algorithm
 from constants import *
 from function import PolicyV2 as Policy
@@ -16,10 +14,9 @@ from registry import Registry
 ALGORITHM_NAME = "monte-carlo-v2"
 
 class MonteCarloArgs:
-    discount_rate:float
-    episodes:int
-    max_steps:int
     run_id:str
+    episodes:int
+    discount_rate:float
 
 class MonteCarloV2(Algorithm):
     """
@@ -34,9 +31,7 @@ class MonteCarloV2(Algorithm):
         self.registry = registry
         self.discount_rate = args.discount_rate
         self.max_episodes = args.episodes
-        self.max_steps_per_episode = args.max_steps
         self.memory = ExperienceMemory(10000)
-        self.init_experimental_stuff()
 
         if args.run_id == None:
             self.mdp.set_operator(MACHINE_TRAINING)
@@ -57,11 +52,11 @@ class MonteCarloV2(Algorithm):
         else:
             self.run_episode(0)
             while True:
-                time.sleep(1)
+                time.sleep(5)
 
         self.save(max_episodes)
 
-        self.do_end_of_run_stuff()
+        self.log_run_metrics()
 
     def run_training(self, episodes:int):
         for episode in range(1, episodes + 1):
@@ -75,7 +70,7 @@ class MonteCarloV2(Algorithm):
 
             self.run_history.add(episode, total_reward, self.policy.epsilon)
 
-            self.do_end_of_episode_stuff(t0=t0, episode=episode, reward=total_reward)
+            self.log_episode_metrics(t0=t0, episode=episode, reward=total_reward)
 
         self.logger.info("-" * 50)
         self.logger.info(f"run id: {self.run_history.run_id}")
@@ -107,7 +102,7 @@ class MonteCarloV2(Algorithm):
 
             self.logger.info(f"{episode}> action: {action}, reward: {reward}, steps: {steps}")
 
-            self.logger.debug(f"{episode}> state: {state}")
+            self.logger.debug(f"{episode}> state:\n{state}")
 
         return rewards, total_reward
 
@@ -137,41 +132,18 @@ class MonteCarloV2(Algorithm):
                 self.registry.save_run_history(self.name, self.run_history)
                 self.save_model(self.run_history.run_id)
 
-    def init_experimental_stuff(self):
-        self.states_explored_pct = []
-        self.starting_states_explored_pct = []
-
-    def do_end_of_episode_stuff(self, *args, **kwargs):
+    def log_episode_metrics(self, *args, **kwargs):
         t0 = kwargs["t0"]
-        mdp:DriftCarMDP = self.mdp
         episode:int = kwargs["episode"]
         reward:float = kwargs["reward"]
 
+        max_reward_info = self.run_history.get_latest_max_reward_info()
+
         self.logger.info("-" * 50)
         self.logger.info(f"{episode}> total reward: {reward}")
-        max_reward_info = self.run_history.get_latest_max_reward_info()
         self.logger.info(f"{episode}> max reward ({max_reward_info[0]}): {max_reward_info[1]:.2f}")
         self.logger.info(f"{episode}> episode elapsed time: {datetime.utcnow() - t0}")
         self.logger.info(f"{episode}> elapsed time: {datetime.utcnow() - self.t0}")
-
-        # plots
-
-        # explored_pct = round(len(self.policy) / mdp.n_discrete_state_space, 2)
-        # self.states_explored_pct.append(explored_pct)
-
-        # starting_states_explored_count = { k: len(list(g)) for k, g in groupby(sorted(mdp.starting_positions))}
-        # starting_explored_pct = round(len(starting_states_explored_count) / mdp.n_discrete_state_space, 2)
-        # self.starting_states_explored_pct.append(starting_explored_pct)
-
-        # self.registry.write_plot(
-        #     x_list=list(range(1, episode + 1)),
-        #     y_lists=[self.states_explored_pct, self.starting_states_explored_pct],
-        #     plot_labels=["States explored", "Starting states explored"],
-        #     x_label="Episode",
-        #     y_label="Exploration %",
-        #     title=f"Training: State Space Explored % ({self.name})",
-        #     filename=f"{self.name}-{self.run_history.run_id}-state-space-explored.png"
-        # )
 
         self.registry.write_plot(
             x_list=list(range(1, episode + 1)),
@@ -183,7 +155,7 @@ class MonteCarloV2(Algorithm):
             filename=f"{self.name}-{self.run_history.run_id}-total-reward.png"
         )
 
-    def do_end_of_run_stuff(self, *args, **kwargs):
+    def log_run_metrics(self, *args, **kwargs):
         self.logger.info(f"is terminal history: {self.run_history.is_terminal_history}")
         self.logger.info(f"max reward history: {self.run_history.max_rewards_history}")
         self.logger.info(f"elapsed time: {datetime.utcnow() - self.t0}")
