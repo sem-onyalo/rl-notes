@@ -83,7 +83,7 @@ class GridTargetMDP(MDP):
 
     def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
         agent_moved = self.update_agent(action)
-        reward = self.update_reward(agent_moved)
+        reward = self.update_reward()
         is_terminal = self.get_is_terminal()
 
         state = self.get_state()
@@ -93,6 +93,15 @@ class GridTargetMDP(MDP):
         self.update_display(is_terminal)
 
         return reward, state, is_terminal, {}
+
+    def get_operator(self) -> str:
+        return self.operator
+
+    def set_operator(self, operator:str) -> None:
+        self.operator = operator
+        if self.operator == HUMAN:
+            self.display = True
+            self.init_display()
 
     def init_display(self) -> None:
         if self.display:
@@ -177,18 +186,25 @@ class GridTargetMDP(MDP):
         return x, y
 
     def update_agent(self, action:int) -> bool:
+        agent_moved = False
         if self.operator == HUMAN:
             action = -1
             if self.check_input():
                 pressed = pygame.key.get_pressed()
                 if pressed[K_UP]:
                     action = NORTH
+                    agent_moved = True
                 elif pressed[K_RIGHT]:
                     action = EAST
+                    agent_moved = True
                 elif pressed[K_DOWN]:
                     action = SOUTH
+                    agent_moved = True
                 elif pressed[K_LEFT]:
                     action = WEST
+                    agent_moved = True
+        else:
+            agent_moved = True
 
         position = self.agent.get_position()
         if action == NORTH and position[Y] > 1:
@@ -200,10 +216,10 @@ class GridTargetMDP(MDP):
         elif action == WEST and position[X] > 1:
             position = (position[X] - 1, position[Y])
 
-        agent_moved = False
+        # agent_moved = False
         if position != self.agent.get_position():
             self.agent.update_position(position)
-            agent_moved = True
+        #     agent_moved = True
 
         return agent_moved
 
@@ -214,10 +230,8 @@ class GridTargetMDP(MDP):
             self.debounce = time.time_ns()
             return True
 
-    def update_reward(self, agent_moved:bool) -> float:
-        reward = 0.
-        if agent_moved and self.agent.get_position() != self.target.get_position():
-            reward = -1
+    def update_reward(self) -> float:
+        reward = 1. if self.agent.get_position() == self.target.get_position() else 0.
         self.total_episode_reward += reward
         return reward
 
@@ -231,9 +245,3 @@ class GridTargetMDP(MDP):
         state[self.agent.get_position_idx()] = 1
         state[self.target.get_position_idx()] = 1
         return state
-
-    def set_operator(self, operator:str) -> None:
-        self.operator = operator
-        if self.operator == HUMAN:
-            self.display = True
-            self.init_display()

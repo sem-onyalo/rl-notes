@@ -95,7 +95,7 @@ class QLearningV2(Algorithm):
 
     def update_function(self, state:str, action:int, next_state:str, reward:float) -> None:
         value = self.function.get(state, action)
-        max_value = self.policy.get_greedy(next_state)
+        max_value = self.policy(next_state)
         # Q(S,A) = Q(S,A) + a * (R + y * max_a[Q(S',a)] - Q(S,A))
         new_value = value + self.change_rate * (reward + (self.discount_rate * max_value) - value)
         self.function.update(state, action, new_value)

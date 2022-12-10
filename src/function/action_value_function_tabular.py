@@ -39,4 +39,3 @@ class ActionValueFunctionTabular:
                 max_value = self.state_action_values[state][action]
 
         return optimal_action
-

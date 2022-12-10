@@ -1,11 +1,11 @@
+import time
 from datetime import datetime
-from itertools import groupby
 
 import numpy as np
 
 from .algorithm import Algorithm
-from constants import MACHINE
-from function import PolicyV2
+from constants import *
+from function import PolicyV2 as Policy
 from mdp import MDP
 from mdp import DriftCarMDP
 from model import ExperienceMemory
@@ -15,32 +15,35 @@ from registry import Registry
 
 ALGORITHM_NAME = "monte-carlo-v2"
 
+class MonteCarloArgs:
+    discount_rate:float
+    episodes:int
+    max_steps:int
+    run_id:str
+
 class MonteCarloV2(Algorithm):
     """
     This class represents the GLIE (Greedy in the Limit with Infinite Exploration) Monte-Carlo control algorithm.
     """
 
-    def __init__(
-        self, 
-        mdp:MDP, 
-        policy:PolicyV2, 
-        registry:Registry=None, 
-        discount_rate=1., 
-        max_episodes=1000, 
-        memory_capacity=10000, 
-        max_steps_per_episode=5000) -> None:
+    def __init__(self, mdp:MDP, policy:Policy, registry:Registry, args:MonteCarloArgs) -> None:
         super().__init__(ALGORITHM_NAME)
 
         self.mdp = mdp
         self.policy = policy
         self.registry = registry
-        self.discount_rate = discount_rate
-        self.max_episodes = max_episodes
-        self.max_steps_per_episode = max_steps_per_episode
-        self.memory = ExperienceMemory(memory_capacity)
+        self.discount_rate = args.discount_rate
+        self.max_episodes = args.episodes
+        self.max_steps_per_episode = args.max_steps
+        self.memory = ExperienceMemory(10000)
         self.init_experimental_stuff()
 
-        self.mdp.set_operator(MACHINE)
+        if args.run_id == None:
+            self.mdp.set_operator(MACHINE_TRAINING)
+        else:
+            buffer = registry.load_model(f"{self.name}-{args.run_id}.{self.model_file_ext}")
+            self.policy.function.load_from_buffer(buffer)
+            self.mdp.set_operator(MACHINE)
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -49,7 +52,19 @@ class MonteCarloV2(Algorithm):
 
         self.t0 = datetime.utcnow()
 
-        for episode in range(1, max_episodes + 1):
+        if self.mdp.get_operator() == MACHINE_TRAINING:
+            self.run_training(max_episodes)
+        else:
+            self.run_episode(0)
+            while True:
+                time.sleep(1)
+
+        self.save(max_episodes)
+
+        self.do_end_of_run_stuff()
+
+    def run_training(self, episodes:int):
+        for episode in range(1, episodes + 1):
             t0 = self.init_new_episode(episode)
 
             rewards, total_reward = self.run_episode(episode)
@@ -62,9 +77,8 @@ class MonteCarloV2(Algorithm):
 
             self.do_end_of_episode_stuff(t0=t0, episode=episode, reward=total_reward)
 
-        self.save(max_episodes)
-
-        self.do_end_of_run_stuff()
+        self.logger.info("-" * 50)
+        self.logger.info(f"run id: {self.run_history.run_id}")
 
     def run_episode(self, episode:int):
         rewards = {}
@@ -77,7 +91,7 @@ class MonteCarloV2(Algorithm):
         while not is_terminal:
             transformed_state = self.transform_state(state)
 
-            action = self.policy.choose_action(transformed_state)
+            action = self.choose_action(transformed_state)
 
             reward, next_state, is_terminal, info = self.mdp.step(action)
 
@@ -92,13 +106,16 @@ class MonteCarloV2(Algorithm):
             steps = self.run_history.steps - episode_start
 
             self.logger.info(f"{episode}> action: {action}, reward: {reward}, steps: {steps}")
+
             self.logger.debug(f"{episode}> state: {state}")
 
-            if steps >= self.max_steps_per_episode:
-                self.logger.info(f"max steps for episode reached")
-                break
-
         return rewards, total_reward
+
+    def choose_action(self, transformed_state:str) -> int:
+        if self.mdp.get_operator() == MACHINE_TRAINING:
+            return self.policy.choose_action(transformed_state)
+        else:
+            return self.policy(transformed_state)
 
     def update_function(self, rewards:dict) -> None:
         for (state, action) in rewards:
@@ -115,9 +132,10 @@ class MonteCarloV2(Algorithm):
         return sum([self.discount_rate**step * reward for step, reward in enumerate(rewards)])
 
     def save(self, max_episodes:int):
-        if self.registry != None and max_episodes > 0:
-            self.registry.save_run_history(self.name, self.run_history)
-            self.save_model(self.run_history.run_id)
+        if self.mdp.get_operator() == MACHINE_TRAINING:
+            if self.registry != None and max_episodes > 0:
+                self.registry.save_run_history(self.name, self.run_history)
+                self.save_model(self.run_history.run_id)
 
     def init_experimental_stuff(self):
         self.states_explored_pct = []
@@ -129,6 +147,7 @@ class MonteCarloV2(Algorithm):
         episode:int = kwargs["episode"]
         reward:float = kwargs["reward"]
 
+        self.logger.info("-" * 50)
         self.logger.info(f"{episode}> total reward: {reward}")
         max_reward_info = self.run_history.get_latest_max_reward_info()
         self.logger.info(f"{episode}> max reward ({max_reward_info[0]}): {max_reward_info[1]:.2f}")
@@ -170,7 +189,7 @@ class MonteCarloV2(Algorithm):
         self.logger.info(f"elapsed time: {datetime.utcnow() - self.t0}")
 
 class MonteCarloV2Inf(Algorithm):
-    def __init__(self, mdp:MDP, policy:PolicyV2, registry:Registry, run_id:str, max_steps=5000) -> None:
+    def __init__(self, mdp:MDP, policy:Policy, registry:Registry, run_id:str, max_steps=5000) -> None:
         super().__init__(ALGORITHM_NAME)
 
         assert run_id != None, "Please supply the run id"

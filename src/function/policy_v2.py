@@ -40,9 +40,6 @@ class PolicyV2:
         else:
             return self.__call__(state)
 
-    def get_greedy(self, state:str) -> float:
-        return self.function.get(state, self.__call__(state))
-
     def decay(self, value:float) -> None:
         if self.decay_type == GLIE_DECAY:
             self.epsilon = 1 / value

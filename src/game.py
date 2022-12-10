@@ -29,6 +29,7 @@ def get_runtime_args():
     parser.add_argument("--explore-type", type=str, default=EPSILON_GREEDY_EXPLORE, help="Denotes how the agent will explore the MDP space (i.e. explore/exploit balance)")
     parser.add_argument("--epsilon", type=float, default=0.9, help="The starting epsilon value to use for epsilon-greedy exploration.")
     parser.add_argument("--decay-type", type=str, default=GLIE_DECAY, help="The epsilon decay function to use.")
+    parser.add_argument("--run-id", type=str, default=None, help="The run ID to supply to load a trained model from.")
     
     mdp_parser = parser.add_subparsers(dest="mdp")
 
@@ -69,7 +70,9 @@ def main(args):
         policy = PolicyV2(mdp, function, args.explore_type, args.epsilon, args.decay_type)
 
         _logger.info("Building agent")
-        agent = MonteCarloV2(mdp, policy, registry, args.discount_rate, args.episodes, max_steps_per_episode=args.max_steps)
+        # pipenv run python src/game.py --discount-rate .8 grid-target monte-carlo --episodes 100
+        # pipenv run python src/game.py --run-id <run-id> grid-target --display --trail monte-carlo
+        agent = MonteCarloV2(mdp, policy, registry, args)
     else:
         raise Exception(f"Agent {args.agent} invalid or not yet implemented.")
 

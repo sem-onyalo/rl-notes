@@ -1,5 +1,6 @@
 HUMAN = "human"
 MACHINE = "machine"
+MACHINE_TRAINING = "machine-training"
 
 MONTE_CARLO = "monte-carlo"
 MONTE_CARLO_V2 = "monte-carlo-v2"
