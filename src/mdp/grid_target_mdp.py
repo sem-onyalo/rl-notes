@@ -75,6 +75,9 @@ class GridTargetMDP(MDP):
         assert self.operator != None, "Set agent operator parameter before starting"
         self.target = self.build_actor(self.target_start_position, BLUE)
         self.agent = self.build_actor(self.agent_start_position, RED)
+        self.target_image = pygame.image.load("./assets/target.png")
+        self.agent_image = pygame.image.load("./assets/agent.png")
+        self.star_image = pygame.image.load("./assets/star.png")
         self.total_episode_reward = 0
         self.update_display(False)
         state = self.get_state()
@@ -158,13 +161,26 @@ class GridTargetMDP(MDP):
 
     def draw_target(self) -> None:
         pos = self.get_display_position(self.target.get_position())
-        pygame.draw.circle(self.surface, self.target.colour, pos, self.target.size)
+        # pygame.draw.circle(self.surface, self.target.colour, pos, self.target.size)
+        if self.agent.get_position() != self.target.get_position():
+            rect = self.target_image.get_rect()
+            rect.center = pos
+            self.surface.blit(self.target_image, rect)
 
     def draw_agent(self) -> None:
         pos = self.get_display_position(self.agent.get_position())
-        pygame.draw.circle(self.surface, RED, pos, self.agent.size)
+        # pygame.draw.circle(self.surface, RED, pos, self.agent.size)
+        if self.agent.get_position() == self.target.get_position():
+            rect = self.star_image.get_rect()
+            rect.center = pos
+            self.surface.blit(self.star_image, rect)
+        else:
+            rect = self.agent_image.get_rect()
+            rect.center = pos
+            self.surface.blit(self.agent_image, rect)
 
     def draw_reward(self) -> None:
+        return
         text = self.font.render(f"{int(self.total_episode_reward)}", True, (36, 113, 163))
         text_rect = text.get_rect()
         text_rect.center = (self.width // 2, self.height // 2)
@@ -216,10 +232,8 @@ class GridTargetMDP(MDP):
         elif action == WEST and position[X] > 1:
             position = (position[X] - 1, position[Y])
 
-        # agent_moved = False
         if position != self.agent.get_position():
             self.agent.update_position(position)
-        #     agent_moved = True
 
         return agent_moved
 

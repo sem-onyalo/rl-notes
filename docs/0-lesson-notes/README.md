@@ -55,6 +55,16 @@ Building a solution to the reinforcement learning problem requires an understand
 * Markov Decision Process (MDP): a way to model the sequential decision making process, which can be thought of as mathematical equation that the agent needs to solve.
 * Algorithm: determines _how_ the agent will learn how to solve the MDP (e.g. Monte-Carlo, DQN, Actor-Critic).
 
+## Grid Target Environment
+
+An environment where the goal is for the agent (robot icon) to reach the target (beach icon).
+
+* State space: grid width * grid height (default: 10x10)
+* Action space: north, east, south, west
+* Reward function: 1 if agent is on target, otherwise 0
+
+![Grid Target MDP](../mdp-grid-target.png)
+
 ## Algorithms: Basic
 
 There are a number of algorithms that the agent can apply to solve the MDP, each with their own trade-offs (e.g. time to learn, robustness of learning).
