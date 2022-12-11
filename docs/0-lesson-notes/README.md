@@ -85,11 +85,11 @@ It helps to conceptualize the value calculation by considering the backup diagra
 
 ![Value Iteration Equation](../algorithm-optimal-value-iteration.png)
 
-* Return: the total discounted reward from time-step _t_.
-* V𝜋: the value function defining the expected return at state _s_ when following policy 𝜋.
-* Q𝜋: the action-value function defining the expected return at state _s_ and taking action _a_ when following policy 𝜋.
-* V*: the optimal value function defining the expected return at state _s_.
-* Q*: the optimal action-value function defining the expected return at state _s_ and taking action _a_.
+* G<sub>t</sub>: the return, which is the total discounted reward from time-step _t_.
+* V<sub>𝜋</sub>: the value function defining the expected return at state _s_ when following policy 𝜋.
+* Q<sub>𝜋</sub>: the action-value function defining the expected return at state _s_ and taking action _a_ when following policy 𝜋.
+* V<sub>*</sub>: the optimal value function defining the expected return at state _s_.
+* Q<sub>*</sub>: the optimal action-value function defining the expected return at state _s_ and taking action _a_.
 
 ### Monte-Carlo
 
@@ -115,7 +115,7 @@ pipenv run python src/game.py --run-id <run-id> grid-target --display --trail mo
 
 ### Q-Learning
 
-The Q-Learning algorithm updates the action-value function for each state-action pair after every time step. The algorithm uses to policies (known as an off-policy algorithm). There is a behaviour policy which dictates what actions the agent will take and a target policy which is used to update the action-value function. The behaviour policy picks actions using an exploration/exploitation strategy. The target policy picks the action from a state with the maximum value.
+The Q-Learning algorithm is a type of Temporal-Difference learning algorithm. It updates the action-value function for each state-action pair after every time step. The algorithm uses to policies (known as an off-policy algorithm). There is a behaviour policy which dictates what actions the agent will take and a target policy which is used to update the action-value function. The behaviour policy picks actions using an exploration/exploitation strategy. The target policy picks the action from a state with the maximum value.
 
 ![Q-Learning Off-Policy Algorithm](../q-learning-equation-and-backup-diagram.png)
 
@@ -130,6 +130,34 @@ pipenv run python src/game.py grid-target q-learning --discount-rate .7 --change
 ```
 pipenv run python src/game.py --run-id <run-id> grid-target --display --trail q-learning
 ```
+
+### Monte-Carlo vs. Q-Learning (Temporal-Difference)
+
+The difference between a Monte-Carlo (MC) algorithm and a Temporal-Difference (TD) algorithm has to do with a bias-variance trade-off. A TD algorithm is an algorithm that learns _online_, meaning that it learns during the episode as it traverses throught environment. The process of learning from incomplete episodes is known as _bootstrapping_. The algorithm uses an estimated value to update an estimated value.
+
+Both MC and TD algorithms can be generalized to:
+
+* Q<sub>𝜋</sub>(s,a) ← Q<sub>𝜋</sub>(s,a) + α(target - Q<sub>𝜋</sub>(s,a)), where target equals:
+  * G<sub>t</sub> for an MC algorithm
+  * R + γQ<sub>𝜋</sub>(s,a) for a TD algorithm
+
+An MC algorithm has high variance and zero bias, whereas a TD algorithm as low variance but some bias. In the context of general maching learning, high bias is the process as underfitting and high variance is the process of overfitting.
+
+#### Bias
+
+In the context of RL, bias is defined as the difference between the estimated value and the true value, E[target] - Q<sub>𝜋</sub>(s,a). Because the action-value function is defined as Q<sub>𝜋</sub>(s,a) = E[G<sub>t</sub>] an MC algorithm uses G<sub>t</sub>, it uses an unbiased estimate of the action-value function. However, a TD algorithm uses Q<sub>𝜋</sub>(s,a) in its calculation of the target, which is an estimate itself. Therefore, the TD target is biased.
+
+A TD algorithm only considers the immediate reward so it does not generalize well to experiences it hasn't seen. In other words, it underfits the episode. TD algorithms are usually more efficient that MC algorithms but don't converge as well and are more sensitive to initial values.
+
+#### Variance
+
+In the context of RL, variance is defined as _noise_ in the estimator. Because G<sub>t</sub> is a discounted sum of all the rewards for the whole episode, it takes into account all actions that were taken. Different actions within an episode could produce very different returns across episodes, leading to a high variance of returns for the MC target.
+
+An MC algorithm considers all actions, some of which may not be generalizable in other episodes (e.g. imagine an MDP where getting stuck in a corner continues to produce -1 reward). In other words, it overfits to the episode. MC algorithms have good convergence properties and are not very sensitive to initial values but may not be as efficient as TD algorithms.
+
+#### TD(λ)
+
+There is an algorithm that can get you the best of both worlds, known as TD(λ) or n-step bootstrapping. Instead of considering only the first step (i.e. TD) or all steps (i.e. MC) you can consider _n_ steps in your calculation of the target. In this case _n_ becomes another hyperparameter.
 
 ## Algorithms: Practical
 
