@@ -6,7 +6,7 @@ import numpy as np
 
 from mdp import MDP
 
-class TabularFunctionV2:
+class FunctionTabular:
     def __init__(self, **kwargs) -> None:
         if "mdp" in kwargs:
             self.load_from_mdp(kwargs["mdp"])

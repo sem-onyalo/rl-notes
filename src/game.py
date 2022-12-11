@@ -11,8 +11,7 @@ from algorithm import Human
 from algorithm.monte_carlo_v2 import MonteCarloV2 as MonteCarlo
 from algorithm.q_learning_v2 import QLearningV2 as QLearning
 from constants import *
-from function import PolicyV2
-from function import TabularFunctionV2
+from function import PolicyTabular as Policy
 from mdp import GridTargetMDP
 from registry import LocalRegistry
 
@@ -68,11 +67,8 @@ def main(args):
         _logger.info("Building agent")
         agent = Human(mdp)
     elif args.agent in [MONTE_CARLO, Q_LEARNING]:
-        _logger.info("Building function")
-        function = TabularFunctionV2(mdp=mdp)
-
         _logger.info("Builing policy")
-        policy = PolicyV2(mdp, function, args.explore_type, args.epsilon, args.decay_type)
+        policy = Policy(mdp, args.explore_type, args.epsilon, args.decay_type)
 
         if args.agent == MONTE_CARLO:
             _logger.info("Building agent")

@@ -1,6 +1,5 @@
 from .monte_carlo import MonteCarlo
 from .monte_carlo_v2 import MonteCarloV2
-from .monte_carlo_v2 import MonteCarloV2Inf
 from .monte_carlo_policy_gradient import MonteCarloPolicyGradient
 from .monte_carlo_policy_gradient_inf import MonteCarloPolicyGradientInf
 from .policy import Policy
@@ -10,8 +9,8 @@ from .q_network_inf import QNetworkInf
 from .value_iteration import ValueIteration
 from constants import *
 from function import ActionValueFunctionTabular
-from function import PolicyV2
-from function import TabularFunctionV2
+from function import PolicyTabular
+from function import FunctionTabular
 from function import ValueFunctionTabular
 from mdp import DriftCarMDP
 from mdp import DriftCarMDPV2
@@ -40,14 +39,9 @@ class AlgorithmCreator:
             policy = Policy(mdp, args.epsilon)
             algorithm = MonteCarlo(mdp, function, policy, args.discount_rate, args.episodes, (not args.no_glie))
         elif algorithm_name == MONTE_CARLO_V2:
-            if args.inference:
-                function = TabularFunctionV2()
-                policy = PolicyV2(mdp, function, args.explore_type, args.epsilon, args.decay_type)
-                algorithm = MonteCarloV2Inf(mdp, policy, registry, args.run_id, args.max_steps)
-            else:
-                function = TabularFunctionV2(mdp=mdp)
-                policy = PolicyV2(mdp, function, args.explore_type, args.epsilon, args.decay_type)
-                algorithm = MonteCarloV2(mdp, function, policy, registry, args.discount_rate, args.episodes, max_steps_per_episode=args.max_steps)
+            function = FunctionTabular(mdp=mdp)
+            policy = PolicyTabular(mdp, function, args.explore_type, args.epsilon, args.decay_type)
+            algorithm = MonteCarloV2(mdp, function, policy, registry, args.discount_rate, args.episodes, max_steps_per_episode=args.max_steps)
         elif algorithm_name == Q_LEARNING:
             function = ActionValueFunctionTabular(mdp)
             policy = Policy(mdp, args.epsilon)

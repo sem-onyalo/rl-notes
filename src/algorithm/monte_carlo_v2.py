@@ -3,15 +3,13 @@ from datetime import datetime
 
 from .algorithm import Algorithm
 from constants import *
-from function import PolicyV2 as Policy
+from function import Policy
 from mdp import MDP
-from mdp import DriftCarMDP
 from model import ExperienceMemory
 from model import RunHistory
-from model import Transition
 from registry import Registry
 
-ALGORITHM_NAME = "monte-carlo-v2"
+ALGORITHM_NAME = "monte-carlo"
 
 class MonteCarloArgs:
     run_id:str
@@ -29,8 +27,8 @@ class MonteCarloV2(Algorithm):
         self.mdp = mdp
         self.policy = policy
         self.registry = registry
-        self.discount_rate = args.discount_rate
         self.max_episodes = args.episodes
+        self.discount_rate = args.discount_rate
         self.memory = ExperienceMemory(10000)
 
         if args.run_id == None:
@@ -80,11 +78,11 @@ class MonteCarloV2(Algorithm):
         total_reward = 0
         is_terminal = False
         state = self.mdp.start()
-        episode_start = self.run_history.steps
+        start_step = self.run_history.steps
         self.logger.info(f"{episode}> init state:\n{state}")
 
         while not is_terminal:
-            transformed_state = self.transform_state(state)
+            transformed_state = self.policy.transform_state(state)
 
             action = self.choose_action(transformed_state)
 
@@ -98,11 +96,14 @@ class MonteCarloV2(Algorithm):
 
             self.run_history.steps += 1
 
-            steps = self.run_history.steps - episode_start
+            steps = self.run_history.steps - start_step
 
             self.logger.info(f"{episode}> action: {action}, reward: {reward}, steps: {steps}")
 
             self.logger.debug(f"{episode}> state:\n{state}")
+
+            if self.run_history.steps - start_step >= 10000:
+                break
 
         return rewards, total_reward
 
@@ -159,51 +160,3 @@ class MonteCarloV2(Algorithm):
         self.logger.info(f"is terminal history: {self.run_history.is_terminal_history}")
         self.logger.info(f"max reward history: {self.run_history.max_rewards_history}")
         self.logger.info(f"elapsed time: {datetime.utcnow() - self.t0}")
-
-class MonteCarloV2Inf(Algorithm):
-    def __init__(self, mdp:MDP, policy:Policy, registry:Registry, run_id:str, max_steps=5000) -> None:
-        super().__init__(ALGORITHM_NAME)
-
-        assert run_id != None, "Please supply the run id"
-
-        self.mdp = mdp
-        self.policy = policy
-        self.run_id = run_id
-        self.registry = registry
-        self.max_steps = max_steps
-        self.memory = ExperienceMemory(0)
-        self.policy.function.load_from_buffer(registry.load_model(f"{self.name}-{self.run_id}.{self.model_file_ext}"))
-
-    def run(self):
-        steps = 0
-        while steps < self.max_steps:
-            total_reward = 0
-            is_terminal = False
-            state = self.mdp.start()
-            self.logger.info(f"init state: {state}")
-            while not is_terminal:
-                transformed_state = self.transform_state(state)
-
-                # TODO: since function value map is lazy loaded we may get actions that
-                #       haven't been see during training, which means we would be getting
-                #       an arbitrary action back. It would probably be best to handle this
-                #       somehow.
-                action = self.policy(transformed_state)
-
-                reward, next_state, is_terminal, info = self.mdp.step(action)
-
-                self.memory.push(Transition(state, action, next_state, reward))
-
-                total_reward += reward
-
-                state = next_state
-
-                steps += 1
-
-                self.logger.info(f"state: {state}, action: {action}, reward: {reward}")
-
-            self.logger.info(f"total reward: {total_reward}")
-            self.logger.info(f"terminal reason: {info['reason']}")
-
-        self.logger.info(f"Max steps reached, exiting run!")
-        # TODO: write memory to csv file

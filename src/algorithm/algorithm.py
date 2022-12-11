@@ -6,7 +6,7 @@ from typing import List
 
 import numpy as np
 
-from function import PolicyV2
+from function import PolicyTabular
 from mdp import MDP
 from model import ExperienceMemory
 from model import Transition
@@ -15,7 +15,7 @@ from registry import Registry
 
 class Algorithm:
     mdp:MDP
-    policy:PolicyV2
+    policy:PolicyTabular
     memory:ExperienceMemory
     registry:Registry
     run_history:RunHistory
@@ -36,14 +36,6 @@ class Algorithm:
 
     def log_episode_metrics(self, path:List[object], total_reward:float, max_reward:float) -> None:
         self.logger.info(f"Total reward (G_t): {total_reward}, Max reward: {max_reward}")
-
-    def transform_state(self, state:object) -> str:
-        if isinstance(state, int):
-            return str(state)
-        elif isinstance(state, np.ndarray):
-            return ",".join(list(map(str, state.flatten())))
-        else:
-            raise Exception(f"{self.name} currently does not support {type(state)} state types")
 
     def update_history(self, state:int, action:int, next_state:int, reward:float, rewards:DefaultDict[str,List[int]], info:DefaultDict[str,str]) -> None:
         if not (state, action) in rewards:

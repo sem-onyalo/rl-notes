@@ -1,4 +1,5 @@
 from .action_value_function_tabular import ActionValueFunctionTabular
-from .policy_v2 import PolicyV2
-from .tabular_function_v2 import TabularFunctionV2
+from .policy import Policy
+from .policy_tabular import PolicyTabular
+from .function_tabular import FunctionTabular
 from .value_function_tabular import ValueFunctionTabular

@@ -3,13 +3,13 @@ from datetime import datetime
 
 from .algorithm import Algorithm
 from constants import *
-from function import PolicyV2 as Policy
+from function import Policy
 from mdp import MDP
 from model import ExperienceMemory
 from model import RunHistory
 from registry import Registry
 
-ALGORITHM_NAME = "q-learning-v2"
+ALGORITHM_NAME = "q-learning"
 
 class QLearningArgs:
     run_id:str
@@ -28,9 +28,9 @@ class QLearningV2(Algorithm):
         self.mdp = mdp
         self.policy = policy
         self.registry = registry
+        self.max_episodes = args.episodes
         self.discount_rate = args.discount_rate
         self.change_rate = args.change_rate
-        self.max_episodes = args.episodes
         self.memory = ExperienceMemory(10000)
 
         if args.run_id == None:
@@ -78,17 +78,17 @@ class QLearningV2(Algorithm):
         total_reward = 0
         is_terminal = False
         state = self.mdp.start()
-        episode_start = self.run_history.steps
+        start_step = self.run_history.steps
         self.logger.info(f"{episode}> init state:\n{state}")
 
         while not is_terminal:
-            transformed_state = self.transform_state(state)
+            transformed_state = self.policy.transform_state(state)
 
             action = self.choose_action(transformed_state)
 
             reward, next_state, is_terminal, info = self.mdp.step(action)
 
-            transformed_next_state = self.transform_state(next_state)
+            transformed_next_state = self.policy.transform_state(next_state)
 
             self.update_function(transformed_state, action, transformed_next_state, reward)
 
@@ -100,11 +100,14 @@ class QLearningV2(Algorithm):
 
             self.run_history.steps += 1
 
-            steps = self.run_history.steps - episode_start
+            steps = self.run_history.steps - start_step
 
             self.logger.info(f"{episode}> action: {action}, reward: {reward}, steps: {steps}")
 
             self.logger.debug(f"{episode}> state:\n{state}")
+
+            if self.run_history.steps - start_step >= 10000:
+                break
 
         return rewards, total_reward
 
