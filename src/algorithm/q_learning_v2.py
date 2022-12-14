@@ -33,12 +33,7 @@ class QLearningV2(Algorithm):
         self.change_rate = args.change_rate
         self.memory = ExperienceMemory(10000)
 
-        if args.run_id == None:
-            self.mdp.set_operator(MACHINE_TRAINING)
-        else:
-            buffer = registry.load_model(f"{self.name}-{args.run_id}.{self.model_file_ext}")
-            self.policy.function.load_from_buffer(buffer)
-            self.mdp.set_operator(MACHINE)
+        self.load_model(args.run_id)
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -50,13 +45,9 @@ class QLearningV2(Algorithm):
         if self.mdp.get_operator() == MACHINE_TRAINING:
             self.run_training(max_episodes)
         else:
-            self.run_episode(0)
             while True:
+                self.run_policy()
                 time.sleep(5)
-
-        self.save(max_episodes)
-
-        self.log_run_metrics()
 
     def run_training(self, episodes:int):
         for episode in range(1, episodes + 1):
@@ -72,6 +63,10 @@ class QLearningV2(Algorithm):
 
         self.logger.info("-" * 50)
         self.logger.info(f"run id: {self.run_history.run_id}")
+
+        self.save_model()
+
+        self.log_run_metrics()
 
     def run_episode(self, episode:int):
         rewards = {}
@@ -122,13 +117,7 @@ class QLearningV2(Algorithm):
         max_value = self.policy.function.get(next_state, self.policy(next_state))
         # Q(S,A) = Q(S,A) + a * (R + y * max_a[Q(S',a)] - Q(S,A))
         new_value = value + self.change_rate * (reward + (self.discount_rate * max_value) - value)
-        self.policy.function.update(state, action, new_value)
-
-    def save(self, max_episodes:int):
-        if self.mdp.get_operator() == MACHINE_TRAINING:
-            if self.registry != None and max_episodes > 0:
-                self.registry.save_run_history(self.name, self.run_history)
-                self.save_model(self.run_history.run_id)
+        self.policy.update(state, action, new_value)
 
     def log_episode_metrics(self, *args, **kwargs):
         t0 = kwargs["t0"]

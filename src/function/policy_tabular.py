@@ -1,55 +1,103 @@
+import io
+import json
 import random
-from typing import List
+
 import numpy as np
 
 from .policy import Policy
 from .function_tabular import FunctionTabular
-from constants import GLIE_DECAY
-from constants import EXP_DECAY
 from constants import EPSILON_GREEDY_EXPLORE
 from constants import UCB_EXPLORE
 from mdp import MDP
 
-class PolicyTabular(Policy):
-    def __init__(self, mdp:MDP, explore_type:str, epsilon:float, decay_type:str, decay_rate:float=None, epsilon_floor:float=None) -> None:
-        super().__init__(mdp)
-        
-        self.epsilon = epsilon
-        self.decay_type = decay_type
-        self.explore_type = explore_type
-        self.decay_rate = decay_rate
-        self.epsilon_floor = epsilon_floor
+POLICY_NAME = "tabular-function-policy"
 
+class PolicyTabularArgs:
+    explore_type:str
+    epsilon:float
+    epsilon_floor:float
+    decay_type:str
+    decay_rate:int
+
+class PolicyTabular(Policy):
+    def __init__(self, mdp:MDP, args:PolicyTabularArgs) -> None:
+        super().__init__(mdp, POLICY_NAME)
+
+        self.epsilon = args.epsilon
+        self.decay_type = args.decay_type
+        self.explore_type = args.explore_type
+        self.decay_rate = args.decay_rate
+        self.epsilon_floor = args.epsilon_floor
+
+        self.model_file_ext = "json"
         self.function = FunctionTabular(mdp=self.mdp)
 
         assert self.explore_type in [EPSILON_GREEDY_EXPLORE, UCB_EXPLORE], f"{self.explore_type} is invalid or not yet implemented"
 
     def __call__(self, state:str) -> int:
-        return np.argmax(self.function(state)) # return the optimal (max) action
+        """
+        Return the optimal (max) action.
+        """
+        return np.argmax(self.function(state))
 
     def choose_action(self, state:str) -> int:
+        """
+        Choose an action stochastically.
+        """
         if self.explore_type == EPSILON_GREEDY_EXPLORE:
             return self.get_epsilon_greedy_action(state)
         else:
             raise Exception(f"{self.explore_type} not yet implemented")
 
     def get_epsilon_greedy_action(self, state: str) -> int:
+        """
+        Choose an action using the epsilon-greedy algorithm.
+        """
         do_explore = random.random() < self.epsilon
         if do_explore:
-            return random.randint(0, self.n_actions - 1)
+            return random.randint(0, self.mdp.n_action - 1)
         else:
             return self.__call__(state)
 
-    def decay(self, value:float) -> None:
-        if self.decay_type == GLIE_DECAY:
-            self.epsilon = 1 / value
-        elif self.decay_type == EXP_DECAY:
-            raise Exception("Exponential decay not yet implemented.")
+    def get_action_values(self, state:object) -> np.ndarray:
+        """
+        Returns the values associated to each action for a given state.
+        """
+        transformed_state = self.transform_state(state)
+        return self.function(transformed_state)
 
     def transform_state(self, state:object) -> str:
-        if isinstance(state, int):
-            return str(state)
-        elif isinstance(state, np.ndarray):
+        """
+        Transform a state to the format the action-value function uses.
+        """
+        if isinstance(state, np.ndarray):
             return ",".join(list(map(str, state.flatten())))
         else:
             raise Exception(f"{self.name} currently does not support {type(state)} state types")
+
+    def update(self, *args) -> None:
+        """
+        Updates the action-value function.
+        """
+        state = args[0]
+        action = args[1]
+        new_value = args[2]
+        self.function.update(state, action, new_value)
+
+    def get_model(self) -> io.BytesIO:
+        """
+        Gets the model parameters as a bytes-like object.
+        """
+        # state_dict = {}
+        # for state in self.function.value_map:
+        #     state_dict[state] = list(self.function.value_map[state])
+        buffer = io.BytesIO()
+        state_dict = { state: list(self.function.value_map[state]) for state in self.function.value_map }
+        buffer.write(json.dumps(state_dict, indent=4).encode("utf-8"))
+        return buffer
+
+    def load_model(self, buffer:io.BytesIO) -> None:
+        """
+        Loads the model parameters from a bytes-like object.
+        """
+        self.function.load_from_buffer(buffer)

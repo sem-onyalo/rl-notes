@@ -1,4 +1,5 @@
 import logging
+import math
 import time
 from typing import Dict, Tuple
 
@@ -9,6 +10,7 @@ from pygame.locals import *
 
 from .mdp import MDP
 from constants import *
+# from function import Policy
 
 X = 0
 Y = 1
@@ -16,6 +18,7 @@ NORTH = 0
 EAST = 1
 SOUTH = 2
 WEST = 3
+TEXT_COLOUR = (36, 113, 163)
 
 _logger = logging.getLogger(GRID_TARGET_MDP)
 
@@ -47,7 +50,7 @@ class Actor:
         self.position_history.append(self.position)
 
 class GridTargetMDP(MDP):
-    n_actions:int = 4 # NORTH, EAST, SOUTH, WEST
+    n_action:int = 4 # NORTH, EAST, SOUTH, WEST
     def __init__(self, dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
         super().__init__()
 
@@ -57,10 +60,12 @@ class GridTargetMDP(MDP):
         self.height = height
         self.display = display
         self.show_trail = trail
-        self.n_states = dim ** 2
         self.agent_start_position = agent_pos
         self.target_start_position = target_pos
-        self.block_size = (round(self.width/self.dim), round(self.height/self.dim))
+        self.cell_size = (round(self.width/self.dim), round(self.height/self.dim))
+
+        self.n_state = dim ** 2
+        self.d_state = (dim, dim)
 
         self.agent = None
         self.target = None
@@ -106,12 +111,16 @@ class GridTargetMDP(MDP):
             self.display = True
             self.init_display()
 
+    def set_policy(self, policy) -> None:
+        self.policy = policy
+
     def init_display(self) -> None:
         if self.display:
             pygame.init()
             self.game_clock = pygame.time.Clock()
             self.surface = pygame.display.set_mode((self.width, self.height))
-            self.font = pygame.font.Font(pygame.font.get_default_font(), 64)
+            self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
+            # self.font = pygame.font.Font(pygame.font.get_default_font(), 64)
             pygame.display.set_caption("Grid Target MDP")
 
     def update_display(self, is_terminal:bool) -> None:
@@ -125,12 +134,9 @@ class GridTargetMDP(MDP):
             self.draw_grid_lines_x((235, 237, 239))
             self.draw_grid_lines_y((235, 237, 239))
             self.draw_trail()
+            self.draw_values()
             self.draw_target()
             self.draw_agent()
-            if not is_terminal:
-                self.draw_reward()
-            else:
-                self.draw_finish()
             pygame.display.update()
             self.game_clock.tick(self.fps)
 
@@ -181,24 +187,71 @@ class GridTargetMDP(MDP):
 
     def draw_reward(self) -> None:
         return
-        text = self.font.render(f"{int(self.total_episode_reward)}", True, (36, 113, 163))
+        text = self.font.render(f"{int(self.total_episode_reward)}", True, TEXT_COLOUR)
         text_rect = text.get_rect()
         text_rect.center = (self.width // 2, self.height // 2)
         self.surface.blit(text, text_rect)
 
-    def draw_finish(self) -> None:
-        text = self.font.render(f"DONE!", True, (36, 113, 163))
-        text_rect = text.get_rect()
-        text_rect.center = (self.width // 2, self.height // 2)
-        self.surface.blit(text, text_rect)
+    # def draw_finish(self) -> None:
+    #     text = self.font.render(f"DONE!", True, TEXT_COLOUR)
+    #     text_rect = text.get_rect()
+    #     text_rect.center = (self.width // 2, self.height // 2)
+    #     self.surface.blit(text, text_rect)
+
+    def draw_values(self) -> None:
+        for x in range(0, self.dim):
+            for y in range(0, self.dim):
+                state = self.get_state_theoretical((x,y))
+                values = self.policy.get_action_values(state)
+                max_idx = values.argmax()
+                text_values = []
+
+                text_north = self.font_values.render(f"{values[NORTH]:.2f}", True, TEXT_COLOUR)
+                text_x = (self.cell_size[X] * x) + (self.cell_size[X] // 2)
+                text_y = (self.cell_size[Y] * y) + math.floor(self.cell_size[Y] * .1)
+                text_north_rect = text_north.get_rect()
+                text_north_rect.center = (text_x, text_y)
+                text_values.append((text_north, text_north_rect))
+
+                text_east = self.font_values.render(f"{values[EAST]:.2f}", True, TEXT_COLOUR)
+                text_x = (self.cell_size[X] * x) + math.floor(self.cell_size[X] * .9)
+                text_y = (self.cell_size[Y] * y) + (self.cell_size[Y] // 2)
+                text_east_rect = text_east.get_rect()
+                text_east_rect.center = (text_x, text_y)
+                text_values.append((text_east, text_east_rect))
+
+                text_south = self.font_values.render(f"{values[SOUTH]:.2f}", True, TEXT_COLOUR)
+                text_x = (self.cell_size[X] * x) + (self.cell_size[X] // 2)
+                text_y = (self.cell_size[Y] * y) + math.floor(self.cell_size[Y] * .9)
+                text_south_rect = text_south.get_rect()
+                text_south_rect.center = (text_x, text_y)
+                text_values.append((text_south, text_south_rect))
+
+                text_west = self.font_values.render(f"{values[WEST]:.2f}", True, TEXT_COLOUR)
+                text_x = (self.cell_size[X] * x) + math.floor(self.cell_size[X] * .1)
+                text_y = (self.cell_size[Y] * y) + (self.cell_size[Y] // 2)
+                text_west_rect = text_west.get_rect()
+                text_west_rect.center = (text_x, text_y)
+                text_values.append((text_west, text_west_rect))
+                
+                if not all([v == 0 for v in values]):
+                    topleft = (text_values[max_idx][1].topleft[0] - 2, text_values[max_idx][1].topleft[1] - 2)
+                    size = (text_values[max_idx][1].size[X] + 4, text_values[max_idx][1].size[Y] + 4)
+                    pygame.draw.rect(self.surface, RED, pygame.Rect(topleft, size))
+
+                self.surface.blit(text_values[NORTH][0], text_values[NORTH][1])
+                self.surface.blit(text_values[EAST][0], text_values[EAST][1])
+                self.surface.blit(text_values[SOUTH][0], text_values[SOUTH][1])
+                self.surface.blit(text_values[WEST][0], text_values[WEST][1])
+        pass
 
     def build_actor(self, position:Tuple[int, int], colour:Tuple[int, int, int]) -> Actor:
-        radius = round((self.block_size[0] if self.block_size[0] <= self.block_size[1] else self.block_size[1]) / 2) - 4
+        radius = round((self.cell_size[0] if self.cell_size[0] <= self.cell_size[1] else self.cell_size[1]) / 2) - 4
         return Actor(radius, colour, position)
 
     def get_display_position(self, position:Tuple[int, int]) -> Tuple[int, int]:
-        x = round(self.width / self.dim) * position[X] - round(self.block_size[0] / 2)
-        y = round(self.height / self.dim) * position[Y] - round(self.block_size[1] / 2)
+        x = self.cell_size[X] * position[X] - (self.cell_size[X] // 2)
+        y = self.cell_size[Y] * position[Y] - (self.cell_size[Y] // 2)
         return x, y
 
     def update_agent(self, action:int) -> bool:
@@ -245,7 +298,9 @@ class GridTargetMDP(MDP):
             return True
 
     def update_reward(self) -> float:
-        reward = 1. if self.agent.get_position() == self.target.get_position() else 0.
+        # reward = 1. if self.agent.get_position() == self.target.get_position() else 0.
+        # reward = 0. if self.agent.get_position() == self.target.get_position() else -1.
+        reward = 1. if self.agent.get_position() == self.target.get_position() else -1.
         self.total_episode_reward += reward
         return reward
 
@@ -255,7 +310,10 @@ class GridTargetMDP(MDP):
     def get_state(self) -> np.ndarray:
         _logger.debug(f"agent: ({self.agent.get_position()})")
         _logger.debug(f"target: ({self.target.get_position()})")
+        return self.get_state_theoretical(self.agent.get_position_idx())
+
+    def get_state_theoretical(self, agent_position:Tuple[int, int]) -> np.ndarray:
         state = np.zeros((self.dim, self.dim), dtype=np.int32)
-        state[self.agent.get_position_idx()] = 1
         state[self.target.get_position_idx()] = 1
+        state[agent_position] = 1
         return state

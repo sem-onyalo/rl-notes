@@ -31,12 +31,8 @@ class MonteCarloV2(Algorithm):
         self.discount_rate = args.discount_rate
         self.memory = ExperienceMemory(10000)
 
-        if args.run_id == None:
-            self.mdp.set_operator(MACHINE_TRAINING)
-        else:
-            buffer = registry.load_model(f"{self.name}-{args.run_id}.{self.model_file_ext}")
-            self.policy.function.load_from_buffer(buffer)
-            self.mdp.set_operator(MACHINE)
+        self.load_model(args.run_id)
+        self.mdp.set_policy(policy)
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -48,13 +44,9 @@ class MonteCarloV2(Algorithm):
         if self.mdp.get_operator() == MACHINE_TRAINING:
             self.run_training(max_episodes)
         else:
-            self.run_episode(0)
             while True:
+                self.run_policy()
                 time.sleep(5)
-
-        self.save(max_episodes)
-
-        self.log_run_metrics()
 
     def run_training(self, episodes:int):
         for episode in range(1, episodes + 1):
@@ -72,6 +64,10 @@ class MonteCarloV2(Algorithm):
 
         self.logger.info("-" * 50)
         self.logger.info(f"run id: {self.run_history.run_id}")
+
+        self.save_model()
+
+        self.log_run_metrics()
 
     def run_episode(self, episode:int):
         rewards = {}
@@ -120,18 +116,12 @@ class MonteCarloV2(Algorithm):
             state_action_visits = self.run_history.visits[(state, action)]
             total_reward = self.get_total_discounted_reward(state_action_rewards)
             new_value = value + (1 / state_action_visits * (total_reward - value))
-            self.policy.function.update(state, action, new_value)
+            self.policy.update(state, action, new_value)
 
     def get_total_discounted_reward(self, rewards):
         # G_t = SUM(t=0,t=T-1) gamma**t * R
         # G_t = R_t+1 + gamma*R_t+2 + ... + gamma**T-1*R_T
         return sum([self.discount_rate**step * reward for step, reward in enumerate(rewards)])
-
-    def save(self, max_episodes:int):
-        if self.mdp.get_operator() == MACHINE_TRAINING:
-            if self.registry != None and max_episodes > 0:
-                self.registry.save_run_history(self.name, self.run_history)
-                self.save_model(self.run_history.run_id)
 
     def log_episode_metrics(self, *args, **kwargs):
         t0 = kwargs["t0"]

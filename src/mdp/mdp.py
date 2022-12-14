@@ -2,8 +2,9 @@
 from typing import Dict, Tuple
 
 class MDP:
-    n_states:int
-    n_actions:int
+    n_state:int
+    n_action:int
+    d_state:Tuple[int, int]
 
     def start(self) -> float:
         pass

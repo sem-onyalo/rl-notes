@@ -4,9 +4,8 @@ from datetime import datetime
 from typing import DefaultDict
 from typing import List
 
-import numpy as np
-
-from function import PolicyTabular
+from constants import *
+from function import Policy
 from mdp import MDP
 from model import ExperienceMemory
 from model import Transition
@@ -15,11 +14,10 @@ from registry import Registry
 
 class Algorithm:
     mdp:MDP
-    policy:PolicyTabular
+    policy:Policy
     memory:ExperienceMemory
     registry:Registry
     run_history:RunHistory
-    model_file_ext:str = "json"
 
     def __init__(self, name) -> None:
         self.name = name
@@ -54,8 +52,35 @@ class Algorithm:
 
         self.memory.push(Transition(state, action, next_state, reward))
 
-    def save_model(self, run_id:str) -> None:
-        buffer = io.BytesIO()
-        model_state_dict = self.policy.function.state_dict()
-        buffer.write(model_state_dict)
-        self.registry.save_model(f"{self.name}-{run_id}.{self.model_file_ext}", buffer)
+    def load_model(self, run_id:str) -> None:
+        if run_id == None:
+            self.mdp.set_operator(MACHINE_TRAINING)
+        else:
+            buffer = self.registry.load_model(f"{self.name}-{run_id}.{self.policy.model_file_ext}")
+            self.policy.load_model(buffer)
+            self.mdp.set_operator(MACHINE)
+
+    def save_model(self):
+        if self.mdp.get_operator() == MACHINE_TRAINING and self.registry != None:
+            self.registry.save_run_history(self.name, self.run_history)
+            buffer = self.policy.get_model()
+            self.registry.save_model(f"{self.name}-{self.run_history.run_id}.{self.policy.model_file_ext}", buffer)
+
+    def run_policy(self) -> None:
+        is_terminal = False
+        state = self.mdp.start()
+        start_step = self.run_history.steps
+
+        while not is_terminal:
+            transformed_state = self.policy.transform_state(state)
+
+            action = self.policy(transformed_state)
+
+            _, next_state, is_terminal, _ = self.mdp.step(action)
+
+            state = next_state
+
+            self.run_history.steps += 1
+
+            if self.run_history.steps - start_step >= 10000:
+                break

@@ -9,8 +9,8 @@ class StudentMDPV2(MDP):
     """
 
     def __init__(self):
-        self.n_states = 5 # TikTok, Class1, Class2, Class3, End
-        self.n_actions = 5 # TikTok, Quit, Study, Sleep, Pub
+        self.n_state = 5 # TikTok, Class1, Class2, Class3, End
+        self.n_action = 5 # TikTok, Quit, Study, Sleep, Pub
         self.terminal_state = 4
 
         self.state_actions = {
