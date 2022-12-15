@@ -86,9 +86,9 @@ class QLearningV2(Algorithm):
 
             transformed_next_state = self.policy.transform_state(next_state)
 
-            self.update_function(transformed_state, action, transformed_next_state, reward)
-
             self.update_history(transformed_state, action, transformed_next_state, reward, rewards, info)
+
+            self.update_function(transformed_state, action, transformed_next_state, reward)
 
             state = next_state
 

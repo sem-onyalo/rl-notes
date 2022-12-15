@@ -18,6 +18,7 @@ class PolicyApproximatorArgs:
     epsilon_floor:float
     decay_type:str
     decay_rate:int
+    change_rate:float
 
 class PolicyApproximator(Policy):
     def __init__(self, mdp:MDP, args:PolicyApproximatorArgs) -> None:
@@ -33,7 +34,7 @@ class PolicyApproximator(Policy):
         self.loss_function = nn.SmoothL1Loss()
         self.target_function = self.build_function()
         self.behaviour_function = self.build_function()
-        self.optimizer = optim.RMSprop(self.behaviour_function.parameters())
+        self.optimizer = optim.RMSprop(self.behaviour_function.parameters(), lr=args.change_rate)
         self.target_function.load_state_dict(self.behaviour_function.state_dict())
         self.target_function.eval()
 
@@ -45,9 +46,8 @@ class PolicyApproximator(Policy):
         """
         Return the optimal (max) action.
         """
-        with torch.no_grad():
-            predictions = self.get_predictions(state)
-            return predictions.argmax()
+        predictions = self.get_predictions(state)
+        return predictions.argmax()
 
     def choose_action(self, state:torch.Tensor) -> int:
         """
@@ -67,6 +67,21 @@ class PolicyApproximator(Policy):
             return random.randint(0, self.mdp.n_action - 1)
         else:
             return self.__call__(state)
+
+    def get_value(self, state:torch.Tensor, action:int) -> float:
+        """
+        Returns the value for a state and action.
+        """
+        predictions = self.get_predictions(state)
+        return predictions[action]
+
+    def get_values(self, state:np.ndarray) -> np.ndarray:
+        """
+        Returns the values for each action.
+        """
+        transformed_state = self.transform_state(state)
+        predictions = self.get_predictions(transformed_state)
+        return predictions.numpy()
 
     def transform_state(self, state:np.ndarray) -> str:
         """
@@ -91,11 +106,11 @@ class PolicyApproximator(Policy):
         max_value = self.target_function(next_state).max()
         expected_value = reward + (discount_rate * max_value)
 
-        loss = self.loss_function(value, expected_value)
+        loss = self.loss_function(expected_value, value)
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.behaviour_function.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.behaviour_function.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         if update_target_function:
@@ -109,6 +124,13 @@ class PolicyApproximator(Policy):
         state_dict = self.behaviour_function.state_dict()
         torch.save(state_dict, buffer)
         return buffer
+
+    def load_model(self, buffer:io.BytesIO) -> None:
+        """
+        Loads the model parameters from a bytes-like object.
+        """
+        self.behaviour_function.load_state_dict(torch.load(buffer))
+        self.behaviour_function.eval()
 
     def build_function(self):
         layers_list = []
@@ -125,9 +147,7 @@ class PolicyApproximator(Policy):
         layers = []
         layers.append(self.mdp.d_state[0])
         layers.append(layers[-1]*2)
-        # layers.append(layers[-1]*2)
         layers.append(layers[-1]//2)
-        # layers.append(layers[-1]//2)
         layers.append(self.mdp.n_action)
         self.logger.debug(f"layers: {layers}")
         return layers

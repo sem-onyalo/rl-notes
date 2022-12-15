@@ -38,6 +38,7 @@ class QNetworkV2(Algorithm):
         self.memory = ExperienceMemory(10000)
 
         self.load_model(args.run_id)
+        self.mdp.set_policy(policy)
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -78,7 +79,7 @@ class QNetworkV2(Algorithm):
         is_terminal = False
         state = self.mdp.start()
         start_step = self.run_history.steps
-        self.logger.info(f"{episode}> init state:\n{state}")
+        self.logger.debug(f"{episode}> init state:\n{state}")
 
         while not is_terminal:
             transformed_state = self.policy.transform_state(state)
@@ -89,9 +90,9 @@ class QNetworkV2(Algorithm):
 
             # transformed_next_state = self.policy.transform_state(next_state)
 
-            self.update_function()
-
             self.update_history(tuple(state.flatten()), action, tuple(next_state.flatten()), reward, rewards, info)
+
+            self.update_function()
 
             state = next_state
 
@@ -101,7 +102,7 @@ class QNetworkV2(Algorithm):
 
             steps = self.run_history.steps - start_step
 
-            self.logger.info(f"{episode}> action: {action}, reward: {reward}, steps: {steps}")
+            self.logger.info(f"{episode}> action: {action}, reward: {reward}, steps: {steps}, {self.run_history.steps}")
 
             self.logger.debug(f"{episode}> state:\n{state}")
 
@@ -117,16 +118,13 @@ class QNetworkV2(Algorithm):
             return self.policy(transformed_state)
 
     def update_function(self):
-        if len(self.memory) >= self.batch_size:
-            self.logger.debug("updating function")
+        update_target_function = False
+        if self.run_history.steps > 0 and self.run_history.steps % self.target_update_frequency == 0:
+            update_target_function = True
+            self.logger.debug("updating target function")
 
-            update_target_function = False
-            if self.run_history.steps > 0 and self.run_history.steps % self.target_update_frequency == 0:
-                update_target_function = True
-                self.logger.debug("updating target function")
-
-            transition = self.memory.sample(self.batch_size)[0]
-            self.policy.update(transition, self.discount_rate, update_target_function)
+        transition = self.memory.sample(self.batch_size)[0]
+        self.policy.update(transition, self.discount_rate, update_target_function)
 
     def log_episode_metrics(self, *args, **kwargs):
         t0 = kwargs["t0"]

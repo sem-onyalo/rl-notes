@@ -34,7 +34,7 @@ class Policy:
         """
         pass
 
-    def get_value(self, state:str, action:int) -> np.ndarray:
+    def get_value(self, state:str, action:int) -> float:
         """
         Returns the value for a state and action.
         """
