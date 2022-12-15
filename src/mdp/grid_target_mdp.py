@@ -120,7 +120,6 @@ class GridTargetMDP(MDP):
             self.game_clock = pygame.time.Clock()
             self.surface = pygame.display.set_mode((self.width, self.height))
             self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
-            # self.font = pygame.font.Font(pygame.font.get_default_font(), 64)
             pygame.display.set_caption("Grid Target MDP")
 
     def update_display(self, is_terminal:bool) -> None:
@@ -167,7 +166,6 @@ class GridTargetMDP(MDP):
 
     def draw_target(self) -> None:
         pos = self.get_display_position(self.target.get_position())
-        # pygame.draw.circle(self.surface, self.target.colour, pos, self.target.size)
         if self.agent.get_position() != self.target.get_position():
             rect = self.target_image.get_rect()
             rect.center = pos
@@ -175,7 +173,6 @@ class GridTargetMDP(MDP):
 
     def draw_agent(self) -> None:
         pos = self.get_display_position(self.agent.get_position())
-        # pygame.draw.circle(self.surface, RED, pos, self.agent.size)
         if self.agent.get_position() == self.target.get_position():
             rect = self.star_image.get_rect()
             rect.center = pos
@@ -185,24 +182,11 @@ class GridTargetMDP(MDP):
             rect.center = pos
             self.surface.blit(self.agent_image, rect)
 
-    def draw_reward(self) -> None:
-        return
-        text = self.font.render(f"{int(self.total_episode_reward)}", True, TEXT_COLOUR)
-        text_rect = text.get_rect()
-        text_rect.center = (self.width // 2, self.height // 2)
-        self.surface.blit(text, text_rect)
-
-    # def draw_finish(self) -> None:
-    #     text = self.font.render(f"DONE!", True, TEXT_COLOUR)
-    #     text_rect = text.get_rect()
-    #     text_rect.center = (self.width // 2, self.height // 2)
-    #     self.surface.blit(text, text_rect)
-
     def draw_values(self) -> None:
         for x in range(0, self.dim):
             for y in range(0, self.dim):
                 state = self.get_state_theoretical((x,y))
-                values = self.policy.get_action_values(state)
+                values = self.policy.get_values(state)
                 max_idx = values.argmax()
                 text_values = []
 

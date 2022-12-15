@@ -59,7 +59,13 @@ class PolicyTabular(Policy):
         else:
             return self.__call__(state)
 
-    def get_action_values(self, state:object) -> np.ndarray:
+    def get_value(self, state:str, action:int) -> np.ndarray:
+        """
+        Returns the value for a state and action.
+        """
+        return self.function.get(state, action)
+
+    def get_values(self, state:object) -> np.ndarray:
         """
         Returns the values associated to each action for a given state.
         """
@@ -88,9 +94,6 @@ class PolicyTabular(Policy):
         """
         Gets the model parameters as a bytes-like object.
         """
-        # state_dict = {}
-        # for state in self.function.value_map:
-        #     state_dict[state] = list(self.function.value_map[state])
         buffer = io.BytesIO()
         state_dict = { state: list(self.function.value_map[state]) for state in self.function.value_map }
         buffer.write(json.dumps(state_dict, indent=4).encode("utf-8"))

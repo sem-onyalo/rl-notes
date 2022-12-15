@@ -34,6 +34,7 @@ class QLearningV2(Algorithm):
         self.memory = ExperienceMemory(10000)
 
         self.load_model(args.run_id)
+        self.mdp.set_policy(policy)
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -74,7 +75,7 @@ class QLearningV2(Algorithm):
         is_terminal = False
         state = self.mdp.start()
         start_step = self.run_history.steps
-        self.logger.info(f"{episode}> init state:\n{state}")
+        self.logger.debug(f"{episode}> init state:\n{state}")
 
         while not is_terminal:
             transformed_state = self.policy.transform_state(state)
@@ -113,8 +114,8 @@ class QLearningV2(Algorithm):
             return self.policy(transformed_state)
 
     def update_function(self, state:str, action:int, next_state:str, reward:float) -> None:
-        value = self.policy.function.get(state, action)
-        max_value = self.policy.function.get(next_state, self.policy(next_state))
+        value = self.policy.get_value(state, action)
+        max_value = self.policy.get_value(next_state, self.policy(next_state))
         # Q(S,A) = Q(S,A) + a * (R + y * max_a[Q(S',a)] - Q(S,A))
         new_value = value + self.change_rate * (reward + (self.discount_rate * max_value) - value)
         self.policy.update(state, action, new_value)

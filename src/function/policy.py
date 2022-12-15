@@ -33,8 +33,14 @@ class Policy:
         Choose an action using the epsilon-greedy algorithm.
         """
         pass
-    
-    def get_action_values(self, state:str) -> np.ndarray:
+
+    def get_value(self, state:str, action:int) -> np.ndarray:
+        """
+        Returns the value for a state and action.
+        """
+        pass
+
+    def get_values(self, state:str) -> np.ndarray:
         """
         Returns the values for each action.
         """

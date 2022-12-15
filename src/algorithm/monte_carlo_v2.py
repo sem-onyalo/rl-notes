@@ -75,7 +75,7 @@ class MonteCarloV2(Algorithm):
         is_terminal = False
         state = self.mdp.start()
         start_step = self.run_history.steps
-        self.logger.info(f"{episode}> init state:\n{state}")
+        self.logger.debug(f"{episode}> init state:\n{state}")
 
         while not is_terminal:
             transformed_state = self.policy.transform_state(state)
@@ -111,7 +111,7 @@ class MonteCarloV2(Algorithm):
 
     def update_function(self, rewards:dict) -> None:
         for (state, action) in rewards:
-            value = self.policy.function.get(state, action)
+            value = self.policy.get_value(state, action)
             state_action_rewards = rewards[(state, action)]
             state_action_visits = self.run_history.visits[(state, action)]
             total_reward = self.get_total_discounted_reward(state_action_rewards)

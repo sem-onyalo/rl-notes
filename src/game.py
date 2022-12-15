@@ -63,7 +63,6 @@ def get_runtime_args():
     q_network_parser.add_argument("--discount-rate", type=float, default=.9, help="The discount-rate parameter.")
     q_network_parser.add_argument("--change-rate", type=float, default=.01, help="The change-rate parameter.")
     q_network_parser.add_argument("--target-update-frequency", type=int, default=500, help="The frequency (in steps) to synchronize the target function weights with the behaviour weights.")
-    # q_network_parser.add_argument("--batch-size", type=int, default=16, help="The batch size of the the training data when updated the behaviour function.")
 
     return parser.parse_args()
 
