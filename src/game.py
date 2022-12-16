@@ -22,6 +22,7 @@ _logger = logging.getLogger(__name__)
 def get_runtime_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--log-level", type=str, default="INFO", help="The logging level to use.")
+    parser.add_argument("--plan", action="store_true", help="Build the objects but do not run the agent.")
 
     # registry args
     parser.add_argument("--eval-root", type=str, default="/eval", help="The root directory where training artifacts are written to.")
@@ -95,8 +96,9 @@ def main(args):
     else:
         raise Exception(f"Agent {agent_name} invalid or not yet implemented.")
 
-    _logger.info("Running agent")
-    agent.run()
+    if not args.plan:
+        _logger.info("Running agent")
+        agent.run()
 
     _logger.info("Done!")
 

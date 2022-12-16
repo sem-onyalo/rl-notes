@@ -183,51 +183,51 @@ class GridTargetMDP(MDP):
             self.surface.blit(self.agent_image, rect)
 
     def draw_values(self) -> None:
-        for x in range(0, self.dim):
-            for y in range(0, self.dim):
-                state = self.get_state_theoretical((x,y))
-                values = self.policy.get_values(state)
-                max_idx = values.argmax()
-                text_values = []
+        if self.operator != HUMAN:
+            for x in range(0, self.dim):
+                for y in range(0, self.dim):
+                    state = self.get_state_theoretical((x,y))
+                    values = self.policy.get_values(state)
+                    max_idx = values.argmax()
+                    text_values = []
 
-                text_north = self.font_values.render(f"{values[NORTH]:.2f}", True, TEXT_COLOUR)
-                text_x = (self.cell_size[X] * x) + (self.cell_size[X] // 2)
-                text_y = (self.cell_size[Y] * y) + math.floor(self.cell_size[Y] * .1)
-                text_north_rect = text_north.get_rect()
-                text_north_rect.center = (text_x, text_y)
-                text_values.append((text_north, text_north_rect))
+                    text_north = self.font_values.render(f"{values[NORTH]:.2f}", True, TEXT_COLOUR)
+                    text_x = (self.cell_size[X] * x) + (self.cell_size[X] // 2)
+                    text_y = (self.cell_size[Y] * y) + math.floor(self.cell_size[Y] * .1)
+                    text_north_rect = text_north.get_rect()
+                    text_north_rect.center = (text_x, text_y)
+                    text_values.append((text_north, text_north_rect))
 
-                text_east = self.font_values.render(f"{values[EAST]:.2f}", True, TEXT_COLOUR)
-                text_x = (self.cell_size[X] * x) + math.floor(self.cell_size[X] * .9)
-                text_y = (self.cell_size[Y] * y) + (self.cell_size[Y] // 2)
-                text_east_rect = text_east.get_rect()
-                text_east_rect.center = (text_x, text_y)
-                text_values.append((text_east, text_east_rect))
+                    text_east = self.font_values.render(f"{values[EAST]:.2f}", True, TEXT_COLOUR)
+                    text_x = (self.cell_size[X] * x) + math.floor(self.cell_size[X] * .9)
+                    text_y = (self.cell_size[Y] * y) + (self.cell_size[Y] // 2)
+                    text_east_rect = text_east.get_rect()
+                    text_east_rect.center = (text_x, text_y)
+                    text_values.append((text_east, text_east_rect))
 
-                text_south = self.font_values.render(f"{values[SOUTH]:.2f}", True, TEXT_COLOUR)
-                text_x = (self.cell_size[X] * x) + (self.cell_size[X] // 2)
-                text_y = (self.cell_size[Y] * y) + math.floor(self.cell_size[Y] * .9)
-                text_south_rect = text_south.get_rect()
-                text_south_rect.center = (text_x, text_y)
-                text_values.append((text_south, text_south_rect))
+                    text_south = self.font_values.render(f"{values[SOUTH]:.2f}", True, TEXT_COLOUR)
+                    text_x = (self.cell_size[X] * x) + (self.cell_size[X] // 2)
+                    text_y = (self.cell_size[Y] * y) + math.floor(self.cell_size[Y] * .9)
+                    text_south_rect = text_south.get_rect()
+                    text_south_rect.center = (text_x, text_y)
+                    text_values.append((text_south, text_south_rect))
 
-                text_west = self.font_values.render(f"{values[WEST]:.2f}", True, TEXT_COLOUR)
-                text_x = (self.cell_size[X] * x) + math.floor(self.cell_size[X] * .1)
-                text_y = (self.cell_size[Y] * y) + (self.cell_size[Y] // 2)
-                text_west_rect = text_west.get_rect()
-                text_west_rect.center = (text_x, text_y)
-                text_values.append((text_west, text_west_rect))
-                
-                if not all([v == 0 for v in values]):
-                    topleft = (text_values[max_idx][1].topleft[0] - 2, text_values[max_idx][1].topleft[1] - 2)
-                    size = (text_values[max_idx][1].size[X] + 4, text_values[max_idx][1].size[Y] + 4)
-                    pygame.draw.rect(self.surface, RED, pygame.Rect(topleft, size))
+                    text_west = self.font_values.render(f"{values[WEST]:.2f}", True, TEXT_COLOUR)
+                    text_x = (self.cell_size[X] * x) + math.floor(self.cell_size[X] * .1)
+                    text_y = (self.cell_size[Y] * y) + (self.cell_size[Y] // 2)
+                    text_west_rect = text_west.get_rect()
+                    text_west_rect.center = (text_x, text_y)
+                    text_values.append((text_west, text_west_rect))
+                    
+                    if not all([v == 0 for v in values]):
+                        topleft = (text_values[max_idx][1].topleft[0] - 2, text_values[max_idx][1].topleft[1] - 2)
+                        size = (text_values[max_idx][1].size[X] + 4, text_values[max_idx][1].size[Y] + 4)
+                        pygame.draw.rect(self.surface, RED, pygame.Rect(topleft, size))
 
-                self.surface.blit(text_values[NORTH][0], text_values[NORTH][1])
-                self.surface.blit(text_values[EAST][0], text_values[EAST][1])
-                self.surface.blit(text_values[SOUTH][0], text_values[SOUTH][1])
-                self.surface.blit(text_values[WEST][0], text_values[WEST][1])
-        pass
+                    self.surface.blit(text_values[NORTH][0], text_values[NORTH][1])
+                    self.surface.blit(text_values[EAST][0], text_values[EAST][1])
+                    self.surface.blit(text_values[SOUTH][0], text_values[SOUTH][1])
+                    self.surface.blit(text_values[WEST][0], text_values[WEST][1])
 
     def build_actor(self, position:Tuple[int, int], colour:Tuple[int, int, int]) -> Actor:
         radius = round((self.cell_size[0] if self.cell_size[0] <= self.cell_size[1] else self.cell_size[1]) / 2) - 4

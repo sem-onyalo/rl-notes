@@ -40,7 +40,7 @@ class PolicyApproximator(Policy):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.logger.debug(f"function architecture:\n{self.behaviour_function}")
+        self.logger.info(f"function architecture:\n{self.behaviour_function}")
         
     def __call__(self, state:torch.Tensor) -> int:
         """
@@ -146,8 +146,8 @@ class PolicyApproximator(Policy):
     def get_layers(self) -> list:
         layers = []
         layers.append(self.mdp.d_state[0])
-        layers.append(layers[-1]*2)
-        layers.append(layers[-1]//2)
+        layers.append(self.mdp.d_state[0]**2)
+        layers.append(self.mdp.d_state[0])
         layers.append(self.mdp.n_action)
         self.logger.debug(f"layers: {layers}")
         return layers
