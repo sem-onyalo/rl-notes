@@ -14,6 +14,7 @@ from algorithm.q_network_v2 import QNetworkV2 as QNetwork
 from constants import *
 from function import PolicyApproximator
 from function import PolicyTabular
+from mdp import DiscreteCarMDP
 from mdp import GridTargetMDP
 from registry import LocalRegistry
 
@@ -47,23 +48,32 @@ def get_runtime_args():
     grid_target_parser.add_argument("--display", action="store_true", help="Display the grid on screen.")
     grid_target_parser.add_argument("--trail", action="store_true", help="Display a trail of the agent's path through the MDP.")
 
-    agent_parser = grid_target_parser.add_subparsers(dest="agent")
-    agent_parser.add_parser(HUMAN)
+    discrete_car_parser = mdp_parser.add_parser(DISCRETE_CAR_MDP, help="The discrete car MDP.")
+    discrete_car_parser.add_argument("-r", "--rad", type=int, default=250, help="The track radius.")
+    discrete_car_parser.add_argument("-f", "--fps", type=int, default=60, help="The frames per second.")
+    discrete_car_parser.add_argument("--width", type=int, default=1920, help="The display width.")
+    discrete_car_parser.add_argument("--height", type=int, default=1080, help="The display height.")
+    discrete_car_parser.add_argument("--display", action="store_true", help="Display the grid on screen.")
+    discrete_car_parser.add_argument("--trail", action="store_true", help="Display a trail of the agent's path through the MDP.")
 
-    monte_carlo_parser = agent_parser.add_parser(MONTE_CARLO)
-    monte_carlo_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
-    monte_carlo_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
+    for mdp_parser in [grid_target_parser, discrete_car_parser]:
+        agent_parser = mdp_parser.add_subparsers(dest="agent")
+        agent_parser.add_parser(HUMAN)
 
-    q_learning_parser = agent_parser.add_parser(Q_LEARNING)
-    q_learning_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
-    q_learning_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
-    q_learning_parser.add_argument("--change-rate", type=float, default=1., help="The change-rate parameter.")
+        monte_carlo_parser = agent_parser.add_parser(MONTE_CARLO)
+        monte_carlo_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
+        monte_carlo_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
 
-    q_network_parser = agent_parser.add_parser(Q_NETWORK)
-    q_network_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
-    q_network_parser.add_argument("--discount-rate", type=float, default=.9, help="The discount-rate parameter.")
-    q_network_parser.add_argument("--change-rate", type=float, default=.01, help="The change-rate parameter.")
-    q_network_parser.add_argument("--target-update-frequency", type=int, default=500, help="The frequency (in steps) to synchronize the target function weights with the behaviour weights.")
+        q_learning_parser = agent_parser.add_parser(Q_LEARNING)
+        q_learning_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
+        q_learning_parser.add_argument("--discount-rate", type=float, default=1., help="The discount-rate parameter.")
+        q_learning_parser.add_argument("--change-rate", type=float, default=1., help="The change-rate parameter.")
+
+        q_network_parser = agent_parser.add_parser(Q_NETWORK)
+        q_network_parser.add_argument("--episodes", type=int, default=100, help="The number of episodes to run the algorithm for.")
+        q_network_parser.add_argument("--discount-rate", type=float, default=.9, help="The discount-rate parameter.")
+        q_network_parser.add_argument("--change-rate", type=float, default=.01, help="The change-rate parameter.")
+        q_network_parser.add_argument("--target-update-frequency", type=int, default=500, help="The frequency (in steps) to synchronize the target function weights with the behaviour weights.")
 
     return parser.parse_args()
 
@@ -72,7 +82,13 @@ def main(args):
     registry = LocalRegistry(args.eval_root)
 
     _logger.info("Building MDP")
-    mdp = GridTargetMDP(args.dim, args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
+    mdp_name:str = args.mdp
+    if mdp_name == GRID_TARGET_MDP:
+        mdp = GridTargetMDP(args.dim, args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
+    elif mdp_name == DISCRETE_CAR_MDP:
+        mdp = DiscreteCarMDP(args.rad, args.fps, args.width, args.height, args.display, args.trail)
+    else:
+        raise Exception(f"MDP {mdp_name} invalid or not yet implemented.")
 
     agent_name:str = args.agent
     if agent_name == HUMAN:

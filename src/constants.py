@@ -10,6 +10,7 @@ VALUE_ITERATION = "value-iteration"
 MONTE_CARLO_POLICY_GRADIENT = "monte-carlo-policy-gradient"
 
 GRID_TARGET_MDP = "grid-target"
+DISCRETE_CAR_MDP = "discrete-car"
 DRIFT_CAR_MDP = "drift-car-mdp"
 DRIFT_CAR_MDP_V2 = "drift-car-mdp-v2"
 RACECAR_MDP = "racecar-mdp"

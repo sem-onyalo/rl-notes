@@ -8,12 +8,12 @@ import pygame
 import sys
 from pygame.locals import *
 
-from .mdp import MDP
+from .pygame_mdp import PyGameMDP
+from .pygame_mdp import X
+from .pygame_mdp import Y
 from constants import *
 # from function import Policy
 
-X = 0
-Y = 1
 NORTH = 0
 EAST = 1
 SOUTH = 2
@@ -33,11 +33,9 @@ class Actor:
     def get_position(self) -> Tuple[int, int]:
         return self.position
 
-    def get_previous_position(self) -> Tuple[int, int]:
-        return self.position_history[-1]
-
-    def get_position_idx(self) -> Tuple[int, int]:
-        return (self.get_x() - 1, self.get_y() - 1)
+    def update_position(self, position:Tuple[int, int]) -> None:
+        self.position = position
+        self.position_history.append(self.position)
 
     def get_x(self) -> int:
         return self.position[0]
@@ -45,14 +43,16 @@ class Actor:
     def get_y(self) -> int:
         return self.position[1]
 
-    def update_position(self, position:Tuple[int, int]) -> None:
-        self.position = position
-        self.position_history.append(self.position)
+    def get_position_idx(self) -> Tuple[int, int]:
+        return (self.get_x() - 1, self.get_y() - 1)
 
-class GridTargetMDP(MDP):
-    n_action:int = 4 # NORTH, EAST, SOUTH, WEST
+class GridTargetMDP(PyGameMDP):
     def __init__(self, dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
         super().__init__()
+
+        self.n_state = dim ** 2
+        self.n_action = 4 # NORTH, EAST, SOUTH, WEST
+        self.d_state = (dim, dim)
 
         self.dim = dim
         self.fps = fps
@@ -64,15 +64,14 @@ class GridTargetMDP(MDP):
         self.target_start_position = target_pos
         self.cell_size = (round(self.width/self.dim), round(self.height/self.dim))
 
-        self.n_state = dim ** 2
-        self.d_state = (dim, dim)
-
         self.agent = None
         self.target = None
         self.operator = None
-        self.debounce_val = 100
-        self.debounce = time.time_ns()
         self.total_episode_reward = 0
+
+        self.target_image = pygame.image.load("./assets/target.png")
+        self.agent_image = pygame.image.load("./assets/agent.png")
+        self.star_image = pygame.image.load("./assets/star.png")
 
         self.init_display()
 
@@ -80,11 +79,8 @@ class GridTargetMDP(MDP):
         assert self.operator != None, "Set agent operator parameter before starting"
         self.target = self.build_actor(self.target_start_position, BLUE)
         self.agent = self.build_actor(self.agent_start_position, RED)
-        self.target_image = pygame.image.load("./assets/target.png")
-        self.agent_image = pygame.image.load("./assets/agent.png")
-        self.star_image = pygame.image.load("./assets/star.png")
         self.total_episode_reward = 0
-        self.update_display(False)
+        self.update_display()
         state = self.get_state()
         _logger.debug(f"state:\n{state}")
         return state
@@ -98,21 +94,9 @@ class GridTargetMDP(MDP):
         if agent_moved:
             _logger.debug(f"state:\n{state}")
 
-        self.update_display(is_terminal)
+        self.update_display()
 
         return reward, state, is_terminal, {}
-
-    def get_operator(self) -> str:
-        return self.operator
-
-    def set_operator(self, operator:str) -> None:
-        self.operator = operator
-        if self.operator == HUMAN:
-            self.display = True
-            self.init_display()
-
-    def set_policy(self, policy) -> None:
-        self.policy = policy
 
     def init_display(self) -> None:
         if self.display:
@@ -122,7 +106,10 @@ class GridTargetMDP(MDP):
             self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
             pygame.display.set_caption("Grid Target MDP")
 
-    def update_display(self, is_terminal:bool) -> None:
+    def set_policy(self, policy) -> None:
+        self.policy = policy
+
+    def update_display(self) -> None:
         if self.display:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -273,13 +260,6 @@ class GridTargetMDP(MDP):
             self.agent.update_position(position)
 
         return agent_moved
-
-    def check_input(self) -> bool:
-        if ((time.time_ns() - self.debounce) / 1e6) < self.debounce_val:
-            return False
-        else:
-            self.debounce = time.time_ns()
-            return True
 
     def update_reward(self) -> float:
         # reward = 1. if self.agent.get_position() == self.target.get_position() else 0.

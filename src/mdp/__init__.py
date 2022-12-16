@@ -1,4 +1,5 @@
 
+from .discrete_car_mdp import DiscreteCarMDP
 from .drift_car_mdp_v1 import DriftCarMDP
 from .drift_car_mdp_v2 import DriftCarMDPV2
 from .grid_target_mdp import GridTargetMDP

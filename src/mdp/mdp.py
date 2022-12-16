@@ -1,4 +1,3 @@
-
 from typing import Dict, Tuple
 
 class MDP:
@@ -9,7 +8,7 @@ class MDP:
     def start(self) -> float:
         pass
 
-    def step(self, action:int) -> Tuple[float, int, bool, Dict[str, object]]:
+    def step(self, action:int) -> Tuple[float, float, bool, Dict[str, object]]:
         pass
 
     def get_operator(self) -> str:
