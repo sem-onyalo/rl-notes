@@ -59,9 +59,9 @@ Building a solution to the reinforcement learning problem requires an understand
 
 An environment where the goal is for the agent (robot icon) to reach the target (beach icon).
 
-* State space: grid width * grid height (default: 10x10)
+* State space: grid width * grid height (default: 5x5)
 * Action space: north, east, south, west
-* Reward function: 1 if agent is on target, otherwise 0
+* Reward function: 1 if agent is on target, otherwise -1
 
 ![Grid Target MDP](../mdp-grid-target.png)
 
@@ -164,6 +164,12 @@ There is an algorithm that can get you the best of both worlds, known as TD(λ) 
 ### Q-Network
 
 _TODO_
+
+#### Train
+
+```
+pipenv run python src/game.py grid-target q-network --episodes 500 --discount-rate .7 --change-rate .01
+```
 
 ### Monte-Carlo Policy Gradient
 
