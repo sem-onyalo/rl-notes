@@ -101,10 +101,12 @@ class DiscreteCarMDP(PyGameMDP):
         assert self.operator != None, "Set agent operator parameter before starting"
         self.agent = self.build_agent()
         self.update_display()
+        return super().start()
 
     def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
         self.update_agent(action)
         self.update_display()
+        return super().step(action)
 
     def init_display(self) -> None:
         if self.display:

@@ -12,27 +12,17 @@ A = 2
 TEXT_COLOUR = (36, 113, 163)
 
 class PyGameMDP(MDP):
-    operator:str
     def __init__(self) -> None:
         super().__init__()
 
         self.debounce_val = 100
         self.debounce = time.time_ns()
 
-    def start(self) -> np.ndarray:
-        pass
-
-    def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
-        pass
-
     def init_display(self) -> None:
         pass
 
-    def get_operator(self) -> str:
-        return self.operator
-
-    def set_operator(self, operator:str) -> None:
-        self.operator = operator
+    def set_operator(self, operator: str) -> None:
+        super().set_operator(operator)
         if self.operator == HUMAN:
             self.display = True
             self.init_display()

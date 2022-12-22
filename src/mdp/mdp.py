@@ -4,15 +4,16 @@ class MDP:
     n_state:int
     n_action:int
     d_state:Tuple[int, int]
+    operator:str
 
     def start(self) -> float:
-        pass
+        return None
 
     def step(self, action:int) -> Tuple[float, float, bool, Dict[str, object]]:
-        pass
+        return None, None, None, { "action": action }
 
     def get_operator(self) -> str:
-        pass
+        return self.operator
 
     def set_operator(self, operator:str) -> None:
-        pass
+        self.operator = operator

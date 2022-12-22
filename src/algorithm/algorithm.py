@@ -1,5 +1,5 @@
-import io
 import logging
+import time
 from datetime import datetime
 from typing import DefaultDict
 from typing import List
@@ -24,7 +24,10 @@ class Algorithm:
         self.logger = logging.getLogger(self.name)
 
     def run(self, max_episodes=0):
-        pass
+        self.run_history = RunHistory(max_episodes)
+        while True:
+            self.run_policy()
+            time.sleep(5)
 
     def init_new_episode(self, episode:int) -> datetime:
         self.logger.info("-" * 50)
@@ -72,9 +75,7 @@ class Algorithm:
         start_step = self.run_history.steps
 
         while not is_terminal:
-            transformed_state = self.policy.transform_state(state)
-
-            action = self.policy(transformed_state)
+            action = self.get_action(state)
 
             _, next_state, is_terminal, _ = self.mdp.step(action)
 
@@ -84,3 +85,11 @@ class Algorithm:
 
             if self.run_history.steps - start_step >= 10000:
                 break
+
+    def get_action(self, state:object) -> object:
+        if self.mdp.operator != HUMAN:
+            transformed_state = self.policy.transform_state(state)
+            return self.policy(transformed_state)
+        else:
+            return 0
+

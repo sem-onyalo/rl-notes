@@ -11,8 +11,3 @@ class Human(Algorithm):
         super().__init__(HUMAN)
         self.mdp = mdp
         self.mdp.set_operator(HUMAN)
-
-    def run(self) -> None:
-        self.mdp.start()
-        while True:
-            self.mdp.step(0)

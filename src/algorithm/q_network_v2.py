@@ -50,9 +50,7 @@ class QNetworkV2(Algorithm):
         if self.mdp.get_operator() == MACHINE_TRAINING:
             self.run_training(max_episodes)
         else:
-            while True:
-                self.run_policy()
-                time.sleep(5)
+            return super().run()
 
     def run_training(self, episodes:int):
         for episode in range(1, episodes + 1):
