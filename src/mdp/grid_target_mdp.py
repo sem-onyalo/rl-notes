@@ -9,6 +9,7 @@ import sys
 from pygame.locals import *
 
 from .pygame_mdp import PyGameMDP
+from .pygame_mdp import TEXT_COLOUR
 from .pygame_mdp import X
 from .pygame_mdp import Y
 from constants import *
@@ -18,7 +19,6 @@ NORTH = 0
 EAST = 1
 SOUTH = 2
 WEST = 3
-TEXT_COLOUR = (36, 113, 163)
 
 _logger = logging.getLogger(GRID_TARGET_MDP)
 

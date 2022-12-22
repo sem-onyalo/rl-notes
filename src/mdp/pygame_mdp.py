@@ -8,6 +8,8 @@ from constants import HUMAN
 
 X = 0
 Y = 1
+A = 2
+TEXT_COLOUR = (36, 113, 163)
 
 class PyGameMDP(MDP):
     operator:str
