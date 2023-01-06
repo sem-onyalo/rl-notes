@@ -77,12 +77,12 @@ class GridTargetMDP(PyGameMDP):
 
     def start(self) -> np.ndarray:
         assert self.operator != None, "Set agent operator parameter before starting"
+        self.total_episode_reward = 0
         self.target = self.build_actor(self.target_start_position, BLUE)
         self.agent = self.build_actor(self.agent_start_position, RED)
-        self.total_episode_reward = 0
-        self.update_display()
         state = self.get_state()
         _logger.debug(f"state:\n{state}")
+        self.update_display()
         return state
 
     def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
@@ -173,7 +173,7 @@ class GridTargetMDP(PyGameMDP):
         if self.operator != HUMAN:
             for x in range(0, self.dim):
                 for y in range(0, self.dim):
-                    state = self.get_state_theoretical((x,y))
+                    state = self.get_state_with_actor_position((x,y))
                     values = self.policy.get_values(state)
                     max_idx = values.argmax()
                     text_values = []
@@ -274,9 +274,9 @@ class GridTargetMDP(PyGameMDP):
     def get_state(self) -> np.ndarray:
         _logger.debug(f"agent: ({self.agent.get_position()})")
         _logger.debug(f"target: ({self.target.get_position()})")
-        return self.get_state_theoretical(self.agent.get_position_idx())
+        return self.get_state_with_actor_position(self.agent.get_position_idx())
 
-    def get_state_theoretical(self, agent_position:Tuple[int, int]) -> np.ndarray:
+    def get_state_with_actor_position(self, agent_position:Tuple[int, int]) -> np.ndarray:
         state = np.zeros((self.dim, self.dim), dtype=np.int32)
         state[self.target.get_position_idx()] = 1
         state[agent_position] = 1

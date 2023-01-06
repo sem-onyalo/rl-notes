@@ -83,7 +83,7 @@ class Algorithm:
 
             self.run_history.steps += 1
 
-            if self.run_history.steps - start_step >= 10000:
+            if self.mdp.operator != HUMAN and self.run_history.steps - start_step >= 10000:
                 break
 
     def get_action(self, state:object) -> object:
