@@ -23,8 +23,8 @@ class Rectangle:
 class Agent:
     width:int = 96 # width of ./assets/car.png
     height:int = 44 # height of ./assets/car.png
-    view_width:int = 200
-    view_height:int = 44 + 2*50
+    view_width:int = 100
+    view_height:int = 100
     precision:int = 2
     def __init__(self, position) -> None:
         self.position = position
@@ -132,9 +132,9 @@ class Agent:
         ]
 
         intersect_count = 0
-        origin = Point(0, 0)
+        ray_start = Point(0, point.y)
         for line_segment in line_segments:
-            if self._do_intersect(line_segment[0], line_segment[1], origin, point):
+            if self._do_intersect(line_segment[0], line_segment[1], ray_start, point):
                 intersect_count += 1
         is_in_view = intersect_count > 0 and intersect_count % 2 != 0
 
