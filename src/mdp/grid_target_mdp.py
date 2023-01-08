@@ -86,14 +86,10 @@ class GridTargetMDP(PyGameMDP):
         return state
 
     def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
-        agent_moved = self.update_agent(action)
-        reward = self.update_reward()
+        self.update_agent(action)
+        reward = self.get_reward()
         is_terminal = self.get_is_terminal()
-
         state = self.get_state()
-        if agent_moved:
-            _logger.debug(f"state:\n{state}")
-
         self.update_display()
 
         return reward, state, is_terminal, {}
@@ -225,7 +221,7 @@ class GridTargetMDP(PyGameMDP):
         y = self.cell_size[Y] * position[Y] - (self.cell_size[Y] // 2)
         return x, y
 
-    def update_agent(self, action:int) -> bool:
+    def update_agent(self, action:int) -> None:
         agent_moved = False
         if self.operator == HUMAN:
             action = -1
@@ -259,9 +255,10 @@ class GridTargetMDP(PyGameMDP):
         if position != self.agent.get_position():
             self.agent.update_position(position)
 
-        return agent_moved
+        if agent_moved:
+            self.log_state_debug()
 
-    def update_reward(self) -> float:
+    def get_reward(self) -> float:
         # reward = 1. if self.agent.get_position() == self.target.get_position() else 0.
         # reward = 0. if self.agent.get_position() == self.target.get_position() else -1.
         reward = 1. if self.agent.get_position() == self.target.get_position() else -1.
@@ -272,8 +269,6 @@ class GridTargetMDP(PyGameMDP):
         return self.agent.get_position() == self.target.get_position()
 
     def get_state(self) -> np.ndarray:
-        _logger.debug(f"agent: ({self.agent.get_position()})")
-        _logger.debug(f"target: ({self.target.get_position()})")
         return self.get_state_with_actor_position(self.agent.get_position_idx())
 
     def get_state_with_actor_position(self, agent_position:Tuple[int, int]) -> np.ndarray:
@@ -281,3 +276,9 @@ class GridTargetMDP(PyGameMDP):
         state[self.target.get_position_idx()] = 1
         state[agent_position] = 1
         return state
+
+    def log_state_debug(self) -> None:
+        state = self.get_state()
+        _logger.debug(f"agent: ({self.agent.get_position()})")
+        _logger.debug(f"target: ({self.target.get_position()})")
+        _logger.debug(f"state:\n{state}")
