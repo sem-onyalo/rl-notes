@@ -17,6 +17,7 @@ from constants import *
 from model import geometry
 from model import Point
 from model import Rectangle
+from model import StepResult
 
 FORWARD = 0
 LEFT = 1
@@ -49,6 +50,7 @@ class DiscreteCarMDP(PyGameMDP):
         self.finish_line_height = 20
         self.track:List[Point] = []
         self.track_width = 50
+        self.on_track_limit = 10
 
         self.car_image = pygame.image.load("./assets/car.png")
 
@@ -64,12 +66,10 @@ class DiscreteCarMDP(PyGameMDP):
 
     def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
         self.update_agent(action)
-        reward = self.get_reward()
-        is_terminal = self.get_is_terminal()
-        state = self.get_state()
-        self.update_display(state)
+        result = self.get_result()
+        self.update_display(result.state, result)
 
-        return reward, state, is_terminal, {}
+        return result.reward, result.state, result.is_terminal, {}
 
     def init_display(self) -> None:
         if self.display:
@@ -79,7 +79,7 @@ class DiscreteCarMDP(PyGameMDP):
             self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
             pygame.display.set_caption("Discrete Car MDP")
 
-    def update_display(self, state:np.ndarray) -> None:
+    def update_display(self, state:np.ndarray, result:StepResult=None) -> None:
         if self.display:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -92,22 +92,89 @@ class DiscreteCarMDP(PyGameMDP):
             self.draw_track()
             self.draw_agent()
             self.draw_viewport(state)
-            self.draw_debugging_text()
+            self.draw_debugging_text(result)
             pygame.display.update()
             self.game_clock.tick(self.fps)
 
+    def get_result(self) -> StepResult:
+        agent_polygon = self.agent.get_polygon()
+        agent_centre = self.agent.get_centre()
+
+        is_collision = (
+            agent_polygon.topright.x <= 0 or
+            agent_polygon.topright.y <= 0 or
+            agent_polygon.topright.x >= self.width or
+            agent_polygon.topright.y >= self.height or
+
+            agent_polygon.topleft.x <= 0 or
+            agent_polygon.topleft.y <= 0 or
+            agent_polygon.topleft.x >= self.width or
+            agent_polygon.topleft.y >= self.height or
+
+            agent_polygon.bottomleft.x <= 0 or
+            agent_polygon.bottomleft.y <= 0 or
+            agent_polygon.bottomleft.x >= self.width or
+            agent_polygon.bottomleft.y >= self.height or
+
+            agent_polygon.bottomright.x <= 0 or
+            agent_polygon.bottomright.y <= 0 or
+            agent_polygon.bottomright.x >= self.width or
+            agent_polygon.bottomright.y >= self.height
+        )
+
+        is_finish = (
+            geometry.is_point_in_polygon(self.finish_polygon, agent_polygon.topright) or
+            geometry.is_point_in_polygon(self.finish_polygon, agent_polygon.bottomright)
+        )
+
+        is_terminal = is_collision or is_finish
+
+        state, track_points = self.get_state_and_view_track_points()
+
+        is_on_track = False
+        for point in track_points:
+            is_on_track = ((
+                    agent_centre.x > point.x - self.on_track_limit and 
+                    agent_centre.x < point.x + self.on_track_limit
+                ) or (
+                    agent_centre.y > point.y - self.on_track_limit and 
+                    agent_centre.y < point.y + self.on_track_limit
+                )
+            )
+            if is_on_track:
+                break
+
+        if is_collision:
+            reward = -1
+        elif is_finish or is_on_track:
+            reward = 1
+        else:
+            reward = 0
+
+        result = StepResult()
+        result.is_terminal = is_terminal
+        result.reward = reward
+        result.state = state
+        return result
+
     def get_state(self) -> np.ndarray:
-        state = np.zeros((self.agent.view_width, self.agent.view_height), dtype=np.int32)
+        state, _ = self.get_state_and_view_track_points()
+        return state
+
+    def get_state_and_view_track_points(self) -> Tuple[np.ndarray, List[Point]]:
+        track_points = []
         view = self.agent.get_view()
+        state = np.zeros((self.agent.view_width, self.agent.view_height), dtype=np.int32)
         for point in self.track:
             is_point_in_view, relative_position = geometry.is_point_in_polygon_with_position(view, point)
             if is_point_in_view:
                 row = round(relative_position.y) - 1
                 col = round(relative_position.x) - 1
                 if row in range(state.shape[0]) and col in range(state.shape[1]):
+                    track_points.append(point)
                     state[row][col] = 1
 
-        return state
+        return state, track_points
 
     def build_track(self) -> None:
         self.track = [Point(self.start_position[X], y) for y in range(self.height + 1)]
@@ -133,7 +200,6 @@ class DiscreteCarMDP(PyGameMDP):
 
     def draw_agent(self) -> None:
         agent_polygon = self.agent.get_polygon()
-        # pygame.draw.circle(self.surface, BLUE, self.agent.get_centre(), 2)
         pygame.draw.circle(self.surface, BLUE, agent_polygon.topright(), 2)
         pygame.draw.circle(self.surface, BLUE, agent_polygon.topleft(), 2)
         pygame.draw.circle(self.surface, BLUE, agent_polygon.bottomleft(), 2)
@@ -163,14 +229,14 @@ class DiscreteCarMDP(PyGameMDP):
         pygame.draw.polygon(self.surface, color, [rectangle.topright(), rectangle.topleft(), rectangle.bottomleft(), rectangle.bottomright()], 1)
 
     def update_agent(self, action:int) -> None:
-        action_test = None
+        # action_test = None
         if self.operator == HUMAN:
             action = -1
             if self.check_input():
                 pressed = pygame.key.get_pressed()
                 if pressed[K_UP]:
                     action = FORWARD
-                    action_test = FORWARD
+                    # action_test = FORWARD
                 if pressed[K_LEFT]:
                     action = LEFT
                 elif pressed[K_RIGHT]:
@@ -183,88 +249,22 @@ class DiscreteCarMDP(PyGameMDP):
             self.agent.turn_right()
             self.log_state_debug()
 
-        # self.agent.forward()
-        if action_test == FORWARD:
-            self.agent.forward()
-            self.log_state_debug()
+        self.agent.forward()
+        # if action_test == FORWARD:
+        #     self.agent.forward()
+        #     self.log_state_debug()
 
-    def get_reward(self) -> float:
-        pass
+    def draw_debugging_text(self, result:StepResult) -> None:
+        position = self.font_values.render(f"{self.agent.get_position()}", True, TEXT_COLOUR)
+        position_rect = position.get_rect()
+        position_rect.center = (self.width//2, self.height//2 - 10)
+        self.surface.blit(position, position_rect)
 
-    def get_is_terminal(self) -> bool:
-        agent_polygon = self.agent.get_polygon()
-
-        is_collision = (
-            agent_polygon.topright.x <= 0 or
-            agent_polygon.topright.y <= 0 or
-            agent_polygon.topright.x >= self.width or
-            agent_polygon.topright.y >= self.height or
-
-            agent_polygon.topleft.x <= 0 or
-            agent_polygon.topleft.y <= 0 or
-            agent_polygon.topleft.x >= self.width or
-            agent_polygon.topleft.y >= self.height or
-
-            agent_polygon.bottomleft.x <= 0 or
-            agent_polygon.bottomleft.y <= 0 or
-            agent_polygon.bottomleft.x >= self.width or
-            agent_polygon.bottomleft.y >= self.height or
-
-            agent_polygon.bottomright.x <= 0 or
-            agent_polygon.bottomright.y <= 0 or
-            agent_polygon.bottomright.x >= self.width or
-            agent_polygon.bottomright.y >= self.height
-        )
-
-        is_finish = (
-            geometry.is_point_in_polygon(self.finish_polygon, agent_polygon.topright) or
-            geometry.is_point_in_polygon(self.finish_polygon, agent_polygon.bottomright)
-        )
-
-        return is_collision or is_finish
-
-    # def is_point_in_polygon_with_position(self, polygon:Rectangle, point:Point) -> Tuple[bool, Point]:
-    #     is_in_polygon = self.is_point_in_polygon(polygon, point)
-
-    #     x = round(self.agent._triangle_height(point, polygon.topright, polygon.topleft), self.agent.precision)
-    #     y = round(self.agent._triangle_height(point, polygon.topright, polygon.bottomright), self.agent.precision)
-    #     relative_position = Point(x, y)
-
-    #     return is_in_polygon, relative_position
-
-    # def is_point_in_polygon(self, polygon:Rectangle, point:Point) -> bool:
-    #     """
-    #     Determines if the given point is inside the given view.
-
-    #     Point is in view (i.e. point is inside polygon) if a ray from origin to point intesects the view edges an odd number of times.
-    #         - Source: https://en.wikipedia.org/wiki/Point_in_polygon
-    #     The ray intersects with the view edge based on the orientation of an ordered triplet of points in the plane.
-    #         - Source: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-
-    #     Returns a tuple where element:
-    #         0: true if the point is inside the view, false otherwise
-    #         1: the relative position of the point inside the view
-    #     """
-
-    #     line_segments = [
-    #         (polygon.topright, polygon.topleft),
-    #         (polygon.topleft, polygon.bottomleft),
-    #         (polygon.bottomleft, polygon.bottomright),
-    #         (polygon.bottomright, polygon.topright)
-    #     ]
-
-    #     intersect_count = 0
-    #     ray_start = Point(0, point.y)
-    #     for line_segment in line_segments:
-    #         if self.agent._do_intersect(line_segment[0], line_segment[1], ray_start, point):
-    #             intersect_count += 1
-    #     return intersect_count > 0 and intersect_count % 2 != 0
-
-    def draw_debugging_text(self) -> None:
-        pos = self.font_values.render(f"{self.agent.get_position()}", True, TEXT_COLOUR)
-        pos_rect = pos.get_rect()
-        pos_rect.center = (self.width//2, self.height//2)
-        self.surface.blit(pos, pos_rect)
+        if result != None:
+            reward = self.font_values.render(f"{result.reward}", True, TEXT_COLOUR)
+            reward_rect = reward.get_rect()
+            reward_rect.center = (self.width//2, self.height//2 + 10)
+            self.surface.blit(reward, reward_rect)
 
     def log_state_debug(self) -> None:
         state = np.zeros((self.agent.view_width, self.agent.view_height), dtype=np.int32)

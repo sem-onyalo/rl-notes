@@ -7,4 +7,5 @@ from .point import Point
 from .rectangle import Rectangle
 from .run_history import RunHistory
 from .state_action_pair import StateActionPair
+from .step_result import StepResult
 from .transition import Transition

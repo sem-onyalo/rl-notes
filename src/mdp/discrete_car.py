@@ -36,8 +36,8 @@ class Agent:
     def get_a(self) -> int:
         return self.position[A]
 
-    def get_centre(self) -> Tuple[int, int]:
-        return (self.get_x(), self.get_y())
+    def get_centre(self) -> Point:
+        return Point(self.get_x(), self.get_y())
 
     def turn_left(self) -> None:
         new_angle = 0 if self.get_a() + self.angle_step >= 360 else self.get_a() + self.angle_step

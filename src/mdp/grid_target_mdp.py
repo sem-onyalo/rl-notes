@@ -13,6 +13,7 @@ from .pygame_mdp import TEXT_COLOUR
 from .pygame_mdp import X
 from .pygame_mdp import Y
 from constants import *
+from model import StepResult
 # from function import Policy
 
 NORTH = 0
@@ -87,12 +88,10 @@ class GridTargetMDP(PyGameMDP):
 
     def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
         self.update_agent(action)
-        reward = self.get_reward()
-        is_terminal = self.get_is_terminal()
-        state = self.get_state()
+        result = self.get_result()
         self.update_display()
 
-        return reward, state, is_terminal, {}
+        return result.reward, result.state, result.is_terminal, {}
 
     def init_display(self) -> None:
         if self.display:
@@ -258,15 +257,21 @@ class GridTargetMDP(PyGameMDP):
         if agent_moved:
             self.log_state_debug()
 
-    def get_reward(self) -> float:
+    def get_result(self) -> StepResult:
+        state = self.get_state()
+
         # reward = 1. if self.agent.get_position() == self.target.get_position() else 0.
         # reward = 0. if self.agent.get_position() == self.target.get_position() else -1.
         reward = 1. if self.agent.get_position() == self.target.get_position() else -1.
         self.total_episode_reward += reward
-        return reward
 
-    def get_is_terminal(self) -> bool:
-        return self.agent.get_position() == self.target.get_position()
+        is_terminal = self.agent.get_position() == self.target.get_position()
+
+        result = StepResult()
+        result.is_terminal = is_terminal
+        result.reward = reward
+        result.state = state
+        return result
 
     def get_state(self) -> np.ndarray:
         return self.get_state_with_actor_position(self.agent.get_position_idx())
