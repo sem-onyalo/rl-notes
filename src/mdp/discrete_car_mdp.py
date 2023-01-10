@@ -44,7 +44,7 @@ class DiscreteCarMDP(PyGameMDP):
         self.operator = None
         self.total_episode_reward = 0
 
-        self.start_position = (self.width // 2 + self.rad, self.height // 2, 90)
+        self.start_position = (100, self.height // 2, 90)
         self.finish_position = (self.start_position[0], self.start_position[1])
         self.finish_polygon:Rectangle = None
         self.finish_line_height = 20
@@ -177,8 +177,108 @@ class DiscreteCarMDP(PyGameMDP):
         return state, track_points
 
     def build_track(self) -> None:
-        self.track = [Point(self.start_position[X], y) for y in range(self.height + 1)]
-        
+        self.track = []
+
+        line_1_x = 100
+        line_1_y_start = 300
+        line_1_y_end = self.height - 300
+        line_1 = [Point(line_1_x, y) for y in range(line_1_y_start, line_1_y_end + 1)]
+        self.track += line_1
+
+        line_2 = []
+        for angle in range(180, 270 + 1):
+            x = 300 + 200 * math.cos(angle * math.pi / 180)
+            y = 300 + 200 * math.sin(angle * math.pi / 180)
+            line_2.append(Point(x, y))
+        self.track += line_2
+
+        line_3_y = 100
+        line_3_x_start = 300
+        line_3_x_end = line_3_x_start + 240
+        line_3 = [Point(x, line_3_y) for x in range(line_3_x_start, line_3_x_end + 1)]
+        self.track += line_3
+
+        line_4 = []
+        line_4_centre = Point(540, 300)
+        for angle in range(270, 360 + 1):
+            x = line_4_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_4_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_4.append(Point(x, y))
+        self.track += line_4
+
+        line_5 = []
+        line_5_centre = Point(940, 300)
+        for angle in range(90, 180 + 1):
+            x = line_5_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_5_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_5.append(Point(x, y))
+        self.track += line_5
+
+        line_6_y = 500
+        line_6_x_start = 300 + 240 + 400
+        line_6_x_end = self.width - 300 - 240 - 400
+        line_6 = [Point(x, line_6_y) for x in range(line_6_x_start, line_6_x_end + 1)]
+        self.track += line_6
+
+        line_7 = []
+        line_7_centre = Point(self.width - 300 - 240 - 400, 300)
+        for angle in range(0, 90 + 1):
+            x = line_7_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_7_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_7.append(Point(x, y))
+        self.track += line_7
+
+        line_8 = []
+        line_8_centre = Point(self.width - 300 - 240, 300)
+        for angle in range(180, 270 + 1):
+            x = line_8_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_8_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_8.append(Point(x, y))
+        self.track += line_8
+
+        line_9_y = 100
+        line_9_x_start = self.width - 300 - 240
+        line_9_x_end = line_9_x_start + 240
+        line_9 = [Point(x, line_9_y) for x in range(line_9_x_start, line_9_x_end + 1)]
+        self.track += line_9
+
+        line_10 = []
+        line_10_centre = Point(self.width - 300, 300)
+        for angle in range(270, 360 + 1):
+            x = line_10_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_10_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_10.append(Point(x, y))
+        self.track += line_10
+
+        line_11 = []
+        line_11_x = 1820
+        line_11_y_start = 300
+        line_11_y_end = self.height - 300
+        line_11 = [Point(line_11_x, y) for y in range(line_11_y_start, line_11_y_end + 1)]
+        self.track += line_11
+
+        line_12 = []
+        line_12_centre = Point(self.width - 300, self.height - 300)
+        for angle in range(0, 90 + 1):
+            x = line_12_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_12_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_12.append(Point(x, y))
+        self.track += line_12
+
+        line_13_y = self.height - 100
+        line_13_x_start = 300
+        line_13_x_end = self.width - 300
+        line_13 = [Point(x, line_13_y) for x in range(line_13_x_start, line_13_x_end + 1)]
+        self.track += line_13
+
+        line_14 = []
+        line_14_centre = Point(300, self.height - 300)
+        for angle in range(90, 180 + 1):
+            x = line_14_centre.x + 200 * math.cos(angle * math.pi / 180)
+            y = line_14_centre.y + 200 * math.sin(angle * math.pi / 180)
+            line_14.append(Point(x, y))
+        self.track += line_14
+
         finish_topleft      = Point(self.start_position[X] - self.track_width, self.start_position[Y] - (self.finish_line_height // 2))
         finish_topright     = Point(self.start_position[X] + self.track_width, self.start_position[Y] - (self.finish_line_height // 2))
         finish_bottomleft   = Point(self.start_position[X] - self.track_width, self.start_position[Y] + (self.finish_line_height // 2))
@@ -229,14 +329,14 @@ class DiscreteCarMDP(PyGameMDP):
         pygame.draw.polygon(self.surface, color, [rectangle.topright(), rectangle.topleft(), rectangle.bottomleft(), rectangle.bottomright()], 1)
 
     def update_agent(self, action:int) -> None:
-        # action_test = None
+        action_test = None
         if self.operator == HUMAN:
             action = -1
             if self.check_input():
                 pressed = pygame.key.get_pressed()
                 if pressed[K_UP]:
                     action = FORWARD
-                    # action_test = FORWARD
+                    action_test = FORWARD
                 if pressed[K_LEFT]:
                     action = LEFT
                 elif pressed[K_RIGHT]:
@@ -249,10 +349,10 @@ class DiscreteCarMDP(PyGameMDP):
             self.agent.turn_right()
             self.log_state_debug()
 
-        self.agent.forward()
-        # if action_test == FORWARD:
-        #     self.agent.forward()
-        #     self.log_state_debug()
+        # self.agent.forward()
+        if action_test == FORWARD:
+            self.agent.forward()
+            self.log_state_debug()
 
     def draw_debugging_text(self, result:StepResult) -> None:
         position = self.font_values.render(f"{self.agent.get_position()}", True, TEXT_COLOUR)

@@ -18,7 +18,7 @@ class Agent:
         self.position_history = []
         self.position_history.append(position)
         self.angle_step = 5
-        self.forward_step = 1
+        self.forward_step = 5
 
     def get_position(self) -> Tuple[int, int, int]:
         return self.position
