@@ -98,7 +98,7 @@ class DiscreteCarMDP(PyGameMDP):
 
     def get_result(self) -> StepResult:
         agent_polygon = self.agent.get_polygon()
-        agent_centre = self.agent.get_centre()
+        agent_viewpoint = self.agent.get_viewpoint()
 
         is_collision = (
             agent_polygon.topright.x <= 0 or
@@ -134,11 +134,11 @@ class DiscreteCarMDP(PyGameMDP):
         is_on_track = False
         for point in track_points:
             is_on_track = ((
-                    agent_centre.x > point.x - self.on_track_limit and 
-                    agent_centre.x < point.x + self.on_track_limit
+                    agent_viewpoint.x > point.x - self.on_track_limit and 
+                    agent_viewpoint.x < point.x + self.on_track_limit
                 ) or (
-                    agent_centre.y > point.y - self.on_track_limit and 
-                    agent_centre.y < point.y + self.on_track_limit
+                    agent_viewpoint.y > point.y - self.on_track_limit and 
+                    agent_viewpoint.y < point.y + self.on_track_limit
                 )
             )
             if is_on_track:
@@ -300,6 +300,8 @@ class DiscreteCarMDP(PyGameMDP):
 
     def draw_agent(self) -> None:
         agent_polygon = self.agent.get_polygon()
+        agent_viewpoint = self.agent.get_viewpoint()
+        pygame.draw.circle(self.surface, RED, agent_viewpoint(), 2)
         pygame.draw.circle(self.surface, BLUE, agent_polygon.topright(), 2)
         pygame.draw.circle(self.surface, BLUE, agent_polygon.topleft(), 2)
         pygame.draw.circle(self.surface, BLUE, agent_polygon.bottomleft(), 2)
