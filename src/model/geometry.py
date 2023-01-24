@@ -6,6 +6,9 @@ from .rectangle import Rectangle
 
 PRECISION = 2
 
+def distance(p:Point, q:Point) -> float:
+    return math.sqrt((q.x - p.x)**2 + (q.y - p.y)**2)
+
 def is_point_in_polygon_with_position(polygon:Rectangle, point:Point) -> Tuple[bool, Point]:
     is_in_polygon = is_point_in_polygon(polygon, point)
 

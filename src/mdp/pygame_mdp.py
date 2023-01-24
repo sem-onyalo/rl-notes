@@ -1,8 +1,6 @@
 import time
 from typing import Dict, Tuple
 
-import numpy as np
-
 from .mdp import MDP
 from constants import HUMAN
 
@@ -33,3 +31,9 @@ class PyGameMDP(MDP):
         else:
             self.debounce = time.time_ns()
             return True
+
+    def set_policy(self, policy) -> None:
+        # TODO: remove this, the MDP should not have access to the policy object
+        #       this is only used to show values in the grid target MDP
+        #       need to find another way to show values in the grid target MDP
+        pass

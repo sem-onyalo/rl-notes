@@ -1,6 +1,5 @@
 import logging
 import math
-import time
 from typing import Dict, Tuple
 
 import numpy as np
@@ -13,8 +12,8 @@ from .pygame_mdp import TEXT_COLOUR
 from .pygame_mdp import X
 from .pygame_mdp import Y
 from constants import *
+from model import Actor
 from model import StepResult
-# from function import Policy
 
 NORTH = 0
 EAST = 1
@@ -22,30 +21,6 @@ SOUTH = 2
 WEST = 3
 
 _logger = logging.getLogger(GRID_TARGET_MDP)
-
-class Actor:
-    def __init__(self, size, colour, position) -> None:
-        self.size = size
-        self.colour = colour
-        self.position = position
-        self.position_history = []
-        self.position_history.append(position)
-
-    def get_position(self) -> Tuple[int, int]:
-        return self.position
-
-    def update_position(self, position:Tuple[int, int]) -> None:
-        self.position = position
-        self.position_history.append(self.position)
-
-    def get_x(self) -> int:
-        return self.position[0]
-
-    def get_y(self) -> int:
-        return self.position[1]
-
-    def get_position_idx(self) -> Tuple[int, int]:
-        return (self.get_x() - 1, self.get_y() - 1)
 
 class GridTargetMDP(PyGameMDP):
     def __init__(self, dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
@@ -200,7 +175,7 @@ class GridTargetMDP(PyGameMDP):
                     text_west_rect = text_west.get_rect()
                     text_west_rect.center = (text_x, text_y)
                     text_values.append((text_west, text_west_rect))
-                    
+
                     if not all([v == 0 for v in values]):
                         topleft = (text_values[max_idx][1].topleft[0] - 2, text_values[max_idx][1].topleft[1] - 2)
                         size = (text_values[max_idx][1].size[X] + 4, text_values[max_idx][1].size[Y] + 4)

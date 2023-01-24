@@ -30,3 +30,15 @@ BLUE  = (  0,   0, 255)
 GREEN = (  0, 255,   0)
 RED   = (255,   0,   0)
 WHITE = (255, 255, 255)
+
+X = 0
+Y = 1
+
+NORTH = "n"
+NORTH_EAST = "ne"
+EAST = "e"
+SOUTH_EAST = "se"
+SOUTH = "s"
+SOUTH_WEST = "sw"
+WEST = "w"
+NORTH_WEST = "nw"
