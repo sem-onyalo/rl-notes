@@ -80,7 +80,9 @@ class MonteCarloV2(Algorithm):
 
             action = self.choose_action(transformed_state)
 
-            reward, next_state, is_terminal, info = self.mdp.step(action)
+            function_values = self.policy.get_values(state)
+
+            reward, next_state, is_terminal, info = self.mdp.step(action, function_values)
 
             self.update_history(transformed_state, action, next_state, reward, rewards, info)
 

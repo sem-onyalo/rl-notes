@@ -80,7 +80,9 @@ class QLearningV2(Algorithm):
 
             action = self.choose_action(transformed_state)
 
-            reward, next_state, is_terminal, info = self.mdp.step(action)
+            function_values = self.policy.get_values(state)
+
+            reward, next_state, is_terminal, info = self.mdp.step(action, function_values)
 
             transformed_next_state = self.policy.transform_state(next_state)
 

@@ -9,8 +9,6 @@ from pygame.locals import *
 
 from .pygame_mdp import PyGameMDP
 from .pygame_mdp import TEXT_COLOUR
-from .pygame_mdp import X
-from .pygame_mdp import Y
 from constants import *
 from model import Actor
 from model import StepResult
@@ -20,7 +18,7 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 
-_logger = logging.getLogger(GRID_TARGET_MDP)
+_logger = logging.getLogger(TARGET_GRID_MDP)
 
 class GridTargetMDP(PyGameMDP):
     def __init__(self, dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
@@ -44,6 +42,7 @@ class GridTargetMDP(PyGameMDP):
         self.target = None
         self.operator = None
         self.total_episode_reward = 0
+        self.values = None
 
         self.target_image = pygame.image.load("./assets/target.png")
         self.agent_image = pygame.image.load("./assets/agent.png")
@@ -53,6 +52,7 @@ class GridTargetMDP(PyGameMDP):
 
     def start(self) -> np.ndarray:
         assert self.operator != None, "Set agent operator parameter before starting"
+        self.values = None
         self.total_episode_reward = 0
         self.target = self.build_actor(self.target_start_position, BLUE)
         self.agent = self.build_actor(self.agent_start_position, RED)
@@ -61,9 +61,10 @@ class GridTargetMDP(PyGameMDP):
         self.update_display()
         return state
 
-    def step(self, action:int) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
+    def step(self, action:int, *args) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
+        self.values:np.ndarray = args[0]
         self.update_agent(action)
-        result = self.get_result()
+        result = self.get_step_result()
         self.update_display()
 
         return result.reward, result.state, result.is_terminal, {}
@@ -75,9 +76,6 @@ class GridTargetMDP(PyGameMDP):
             self.surface = pygame.display.set_mode((self.width, self.height))
             self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
             pygame.display.set_caption("Grid Target MDP")
-
-    def set_policy(self, policy) -> None:
-        self.policy = policy
 
     def update_display(self) -> None:
         if self.display:
@@ -140,11 +138,10 @@ class GridTargetMDP(PyGameMDP):
             self.surface.blit(self.agent_image, rect)
 
     def draw_values(self) -> None:
-        if self.operator != HUMAN:
+        if self.operator != HUMAN and isinstance(self.values, np.ndarray):
+            values = self.values
             for x in range(0, self.dim):
                 for y in range(0, self.dim):
-                    state = self.get_state_with_actor_position((x,y))
-                    values = self.policy.get_values(state)
                     max_idx = values.argmax()
                     text_values = []
 
@@ -232,7 +229,7 @@ class GridTargetMDP(PyGameMDP):
         if agent_moved:
             self.log_state_debug()
 
-    def get_result(self) -> StepResult:
+    def get_step_result(self) -> StepResult:
         state = self.get_state()
 
         # reward = 1. if self.agent.get_position() == self.target.get_position() else 0.

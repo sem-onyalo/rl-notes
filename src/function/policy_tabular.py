@@ -10,7 +10,7 @@ from constants import EPSILON_GREEDY_EXPLORE
 from constants import UCB_EXPLORE
 from mdp import MDP
 
-POLICY_NAME = "tabular-function-policy"
+POLICY_NAME = "policy-tabular"
 
 class PolicyTabularArgs:
     explore_type:str
@@ -65,7 +65,7 @@ class PolicyTabular(Policy):
         """
         return self.function.get(state, action)
 
-    def get_values(self, state:object) -> np.ndarray:
+    def get_values(self, state:np.ndarray) -> np.ndarray:
         """
         Returns the values associated to each action for a given state.
         """

@@ -38,7 +38,7 @@ def get_runtime_args():
     
     mdp_parser = parser.add_subparsers(dest="mdp")
 
-    grid_target_parser = mdp_parser.add_parser(GRID_TARGET_MDP, help="The grid target MDP.")
+    grid_target_parser = mdp_parser.add_parser(TARGET_GRID_MDP, help="The target grid MDP.")
     grid_target_parser.add_argument("-d", "--dim", type=int, default=5, help="The grid dimension.")
     grid_target_parser.add_argument("-f", "--fps", type=int, default=60, help="The frames per second.")
     grid_target_parser.add_argument("--width", type=int, default=1920, help="The display width.")
@@ -83,7 +83,7 @@ def main(args):
 
     _logger.info("Building MDP")
     mdp_name:str = args.mdp
-    if mdp_name == GRID_TARGET_MDP:
+    if mdp_name == TARGET_GRID_MDP:
         mdp = GridTargetMDP(args.dim, args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
     elif mdp_name == DISCRETE_CAR_MDP:
         mdp = DiscreteCarMDP(args.rad, args.fps, args.width, args.height, args.display, args.trail)

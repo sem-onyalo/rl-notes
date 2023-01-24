@@ -10,7 +10,7 @@ from .policy import Policy
 from constants import EPSILON_GREEDY_EXPLORE
 from mdp import MDP
 
-POLICY_NAME = "approximation-function-policy"
+POLICY_NAME = "policy-approximator"
 
 class PolicyApproximatorArgs:
     explore_type:str
@@ -138,7 +138,7 @@ class PolicyApproximator(Policy):
         for i in range(1, len(layers) - 1):
             layers_list.append(nn.Linear(layers[i - 1], layers[i]))
             layers_list.append(nn.BatchNorm1d(layers[i]))
-            # layers_list.append(nn.ReLU())
+            layers_list.append(nn.ReLU())
         layers_list.append(nn.Flatten(0))
         layers_list.append(nn.Linear(layers[-2]**2, layers[-1]))
         return nn.Sequential(*layers_list)

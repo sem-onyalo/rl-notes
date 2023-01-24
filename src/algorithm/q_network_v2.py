@@ -38,7 +38,6 @@ class QNetworkV2(Algorithm):
         self.memory = ExperienceMemory(10000)
 
         self.load_model(args.run_id)
-        self.mdp.set_policy(policy)
 
     def run(self, max_episodes=0):
         max_episodes = self.max_episodes if max_episodes == 0 else max_episodes
@@ -84,9 +83,9 @@ class QNetworkV2(Algorithm):
 
             action = self.choose_action(transformed_state)
 
-            reward, next_state, is_terminal, info = self.mdp.step(action)
+            function_values = self.policy.get_values(state)
 
-            # transformed_next_state = self.policy.transform_state(next_state)
+            reward, next_state, is_terminal, info = self.mdp.step(action, function_values)
 
             self.update_history(tuple(state.flatten()), action, tuple(next_state.flatten()), reward, rewards, info)
 
