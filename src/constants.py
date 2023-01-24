@@ -10,6 +10,7 @@ VALUE_ITERATION = "value-iteration"
 MONTE_CARLO_POLICY_GRADIENT = "monte-carlo-policy-gradient"
 
 TARGET_GRID_MDP = "target-grid"
+TARGET_OPEN_MDP = "target-open"
 DISCRETE_CAR_MDP = "discrete-car"
 DRIFT_CAR_MDP = "drift-car-mdp"
 DRIFT_CAR_MDP_V2 = "drift-car-mdp-v2"
@@ -33,6 +34,7 @@ WHITE = (255, 255, 255)
 
 X = 0
 Y = 1
+A = 2
 
 NORTH = 0
 EAST  = 1

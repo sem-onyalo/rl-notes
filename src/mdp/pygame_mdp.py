@@ -1,23 +1,45 @@
+import sys
 import time
-from typing import Dict, Tuple
+
+import pygame
+from pygame.locals import QUIT
 
 from .mdp import MDP
 from constants import HUMAN
 
-X = 0
-Y = 1
-A = 2
 TEXT_COLOUR = (36, 113, 163)
 
 class PyGameMDP(MDP):
+    width:int
+    height:int
+    display:bool
+    operator:str
+    surface:pygame.Surface
+    game_clock:pygame.time.Clock
+    font_values:pygame.font.Font
+
     def __init__(self) -> None:
         super().__init__()
 
         self.debounce_val = 100
         self.debounce = time.time_ns()
 
+    def start(self) -> float:
+        assert self.operator != None, "Set agent operator parameter before starting"
+
     def init_display(self) -> None:
-        pass
+        if self.display:
+            pygame.init()
+            self.game_clock = pygame.time.Clock()
+            self.surface = pygame.display.set_mode((self.width, self.height))
+            self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
+            pygame.display.set_caption("PyGame MDP")
+
+    def is_quit(self) -> None:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
 
     def set_operator(self, operator: str) -> None:
         super().set_operator(operator)

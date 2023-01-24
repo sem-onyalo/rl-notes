@@ -4,7 +4,6 @@ from typing import Dict, Tuple
 
 import numpy as np
 import pygame
-import sys
 from pygame.locals import *
 
 from .pygame_mdp import PyGameMDP
@@ -16,14 +15,14 @@ from model import StepResult
 _logger = logging.getLogger(TARGET_GRID_MDP)
 
 class TargetGridMDP(PyGameMDP):
-    def __init__(self, dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
+    def __init__(self, grid_dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
         super().__init__()
 
-        self.n_state = dim ** 2
+        self.n_state = grid_dim ** 2
         self.n_action = 4 # NORTH, EAST, SOUTH, WEST
-        self.d_state = (dim, dim)
+        self.d_state = (grid_dim, grid_dim)
 
-        self.dim = dim
+        self.grid_dim = grid_dim
         self.fps = fps
         self.width = width
         self.height = height
@@ -31,7 +30,7 @@ class TargetGridMDP(PyGameMDP):
         self.show_trail = trail
         self.agent_start_position = agent_pos
         self.target_start_position = target_pos
-        self.cell_size = (round(self.width/self.dim), round(self.height/self.dim))
+        self.cell_size = (round(self.width/self.grid_dim), round(self.height/self.grid_dim))
 
         self.agent = None
         self.target = None
@@ -46,13 +45,15 @@ class TargetGridMDP(PyGameMDP):
         self.init_display()
 
     def start(self) -> np.ndarray:
-        assert self.operator != None, "Set agent operator parameter before starting"
+        super().start()
         self.values = None
         self.total_episode_reward = 0
         self.target = self.build_actor(self.target_start_position, BLUE)
         self.agent = self.build_actor(self.agent_start_position, RED)
         state = self.get_state()
         _logger.debug(f"state:\n{state}")
+        _logger.debug(f"agent position: {self.agent.get_position()} ({self.get_display_position(self.agent.get_position())})")
+        _logger.debug(f"target position: {self.target.get_position()} ({self.get_display_position(self.target.get_position())})")
         self.update_display()
         return state
 
@@ -64,21 +65,15 @@ class TargetGridMDP(PyGameMDP):
 
         return result.reward, result.state, result.is_terminal, {}
 
-    def init_display(self) -> None:
-        if self.display:
-            pygame.init()
-            self.game_clock = pygame.time.Clock()
-            self.surface = pygame.display.set_mode((self.width, self.height))
-            self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
-            pygame.display.set_caption("Grid Target MDP")
+    def get_state(self) -> np.ndarray:
+        state = np.zeros((self.grid_dim, self.grid_dim), dtype=np.int32)
+        state[self.target.get_position_idx()] = 1
+        state[self.agent.get_position_idx()] = 1
+        return state
 
     def update_display(self) -> None:
         if self.display:
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-
+            self.is_quit()
             self.surface.fill((213, 216, 220))
             self.draw_grid_lines_x((235, 237, 239))
             self.draw_grid_lines_y((235, 237, 239))
@@ -91,8 +86,8 @@ class TargetGridMDP(PyGameMDP):
 
     def draw_grid_lines_x(self, colour:Tuple[int, int, int]) -> None:
         buffer = 0
-        x = round(self.width/self.dim)
-        for _ in range(0, self.dim):
+        x = round(self.width/self.grid_dim)
+        for _ in range(0, self.grid_dim):
             start_pos = (buffer + x, 0)
             end_pos = (buffer + x, self.height)
             pygame.draw.line(self.surface, colour, start_pos, end_pos, width=2)
@@ -100,8 +95,8 @@ class TargetGridMDP(PyGameMDP):
 
     def draw_grid_lines_y(self, colour:Tuple[int, int, int]) -> None:
         buffer = 0
-        y = round(self.height/self.dim)
-        for _ in range(0, self.dim):
+        y = round(self.height/self.grid_dim)
+        for _ in range(0, self.grid_dim):
             start_pos = (0, buffer + y)
             end_pos = (self.width, buffer + y)
             pygame.draw.line(self.surface, colour, start_pos, end_pos, width=2)
@@ -135,8 +130,8 @@ class TargetGridMDP(PyGameMDP):
     def draw_values(self) -> None:
         if self.operator != HUMAN and isinstance(self.values, np.ndarray):
             values = self.values
-            for x in range(0, self.dim):
-                for y in range(0, self.dim):
+            for x in range(0, self.grid_dim):
+                for y in range(0, self.grid_dim):
                     max_idx = values.argmax()
                     text_values = []
 
@@ -211,9 +206,9 @@ class TargetGridMDP(PyGameMDP):
         position = self.agent.get_position()
         if action == NORTH and position[Y] > 1:
             position = (position[X], position[Y] - 1)
-        elif action == EAST and position[X] < self.dim:
+        elif action == EAST and position[X] < self.grid_dim:
             position = (position[X] + 1, position[Y])
-        elif action == SOUTH and position[Y] < self.dim:
+        elif action == SOUTH and position[Y] < self.grid_dim:
             position = (position[X], position[Y] + 1)
         elif action == WEST and position[X] > 1:
             position = (position[X] - 1, position[Y])
@@ -239,15 +234,6 @@ class TargetGridMDP(PyGameMDP):
         result.reward = reward
         result.state = state
         return result
-
-    def get_state(self) -> np.ndarray:
-        return self.get_state_with_actor_position(self.agent.get_position_idx())
-
-    def get_state_with_actor_position(self, agent_position:Tuple[int, int]) -> np.ndarray:
-        state = np.zeros((self.dim, self.dim), dtype=np.int32)
-        state[self.target.get_position_idx()] = 1
-        state[agent_position] = 1
-        return state
 
     def log_state_debug(self) -> None:
         state = self.get_state()

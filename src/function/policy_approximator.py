@@ -146,7 +146,9 @@ class PolicyApproximator(Policy):
     def get_layers(self) -> list:
         layers = []
         layers.append(self.mdp.d_state[0])
-        layers.append(self.mdp.d_state[0]**2)
+        layers.append(self.mdp.d_state[0]*2)
+        layers.append(self.mdp.d_state[0]*4)
+        layers.append(self.mdp.d_state[0]*2)
         layers.append(self.mdp.d_state[0])
         layers.append(self.mdp.n_action)
         self.logger.debug(f"layers: {layers}")
