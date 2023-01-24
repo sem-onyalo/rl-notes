@@ -15,7 +15,7 @@ from constants import *
 from function import PolicyApproximator
 from function import PolicyTabular
 from mdp import DiscreteCarMDP
-from mdp import GridTargetMDP
+from mdp import TargetGridMDP
 from registry import LocalRegistry
 
 _logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ def main(args):
     _logger.info("Building MDP")
     mdp_name:str = args.mdp
     if mdp_name == TARGET_GRID_MDP:
-        mdp = GridTargetMDP(args.dim, args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
+        mdp = TargetGridMDP(args.dim, args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
     elif mdp_name == DISCRETE_CAR_MDP:
         mdp = DiscreteCarMDP(args.rad, args.fps, args.width, args.height, args.display, args.trail)
     else:

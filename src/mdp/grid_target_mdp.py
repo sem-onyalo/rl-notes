@@ -13,14 +13,9 @@ from constants import *
 from model import Actor
 from model import StepResult
 
-NORTH = 0
-EAST = 1
-SOUTH = 2
-WEST = 3
-
 _logger = logging.getLogger(TARGET_GRID_MDP)
 
-class GridTargetMDP(PyGameMDP):
+class TargetGridMDP(PyGameMDP):
     def __init__(self, dim:int, fps:int, width:int, height:int, agent_pos:Tuple[int, int], target_pos:Tuple[int, int], display:bool, trail:bool) -> None:
         super().__init__()
 
@@ -62,7 +57,7 @@ class GridTargetMDP(PyGameMDP):
         return state
 
     def step(self, action:int, *args) -> Tuple[float, np.ndarray, bool, Dict[str, object]]:
-        self.values:np.ndarray = args[0]
+        self.values:np.ndarray = args[0] if len(args) > 0 else None
         self.update_agent(action)
         result = self.get_step_result()
         self.update_display()
