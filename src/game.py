@@ -14,6 +14,7 @@ from algorithm.q_network_v2 import QNetworkV2 as QNetwork
 from constants import *
 from function import PolicyApproximator
 from function import PolicyTabular
+from mdp import RaceTrackMDP
 from mdp import TargetOpenMDP
 from mdp import TargetGridMDP
 from registry import LocalRegistry
@@ -57,7 +58,9 @@ def get_runtime_args():
     target_open_parser.add_argument("--display", action="store_true", help="Display the grid on screen.")
     target_open_parser.add_argument("--trail", action="store_true", help="Display a trail of the agent's path through the MDP.")
 
-    for mdp_parser in [target_grid_parser, target_open_parser]:
+    race_track_parser = mdp_parser.add_parser(RACE_TRACK_MDP, help="The race track MDP.")
+
+    for mdp_parser in [target_grid_parser, target_open_parser, race_track_parser]:
         agent_parser = mdp_parser.add_subparsers(dest="agent")
         agent_parser.add_parser(HUMAN)
 
@@ -88,6 +91,8 @@ def main(args):
         mdp = TargetGridMDP(args.grid_dim, args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
     elif mdp_name == TARGET_OPEN_MDP:
         mdp = TargetOpenMDP(args.fps, args.width, args.height, tuple(map(int, args.agent_start_position.split(","))), tuple(map(int, args.target_start_position.split(","))), args.display, args.trail)
+    elif mdp_name == RACE_TRACK_MDP:
+        mdp = RaceTrackMDP()
     else:
         raise Exception(f"MDP {mdp_name} invalid or not yet implemented.")
 

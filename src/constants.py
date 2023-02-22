@@ -9,6 +9,7 @@ Q_NETWORK = "q-network"
 VALUE_ITERATION = "value-iteration"
 MONTE_CARLO_POLICY_GRADIENT = "monte-carlo-policy-gradient"
 
+RACE_TRACK_MDP = "race-track"
 TARGET_GRID_MDP = "target-grid"
 TARGET_OPEN_MDP = "target-open"
 DISCRETE_CAR_MDP = "discrete-car"
@@ -30,6 +31,7 @@ BLACK = (  0,   0,   0)
 BLUE  = (  0,   0, 255)
 GREEN = (  0, 255,   0)
 RED   = (255,   0,   0)
+GREY  = (245, 245, 245)
 WHITE = (255, 255, 255)
 
 X = 0
@@ -45,3 +47,7 @@ NORTH_EAST = 4
 SOUTH_EAST = 5
 SOUTH_WEST = 6
 NORTH_WEST = 7
+
+FORWARD = 0
+LEFT = 1
+RIGHT = 2
