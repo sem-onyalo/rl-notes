@@ -12,4 +12,5 @@ from .sensor import Sensor
 from .state_action_pair import StateActionPair
 from .step_result import StepResult
 from .track import Track
+from .track_v2 import Track as TrackV2
 from .transition import Transition

@@ -38,8 +38,11 @@ class PyGameMDP(MDP):
     def is_quit(self) -> None:
         for event in pygame.event.get():
             if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
+                self.quit()
+
+    def quit(self) -> None:
+        pygame.quit()
+        sys.exit()
 
     def set_operator(self, operator: str) -> None:
         super().set_operator(operator)
