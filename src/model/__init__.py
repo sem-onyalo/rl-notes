@@ -4,6 +4,7 @@ from .epsilon_decay import EpsilonDecay
 from .epsilon_decay import EpsilonDecayExp
 from .epsilon_decay import EpsilonDecayGlie
 from .experience_memory import ExperienceMemory
+from .item import Item
 from .point import Point
 from .rectangle import Rectangle
 from .run_history import RunHistory

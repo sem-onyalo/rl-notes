@@ -1,3 +1,4 @@
+from .knapsack_mdp import KnapsackMDP
 from .mdp import MDP
 from .race_track_mdp import RaceTrackMDP
 from .racecar_bullet_gym_mdp import RacecarBulletGymMDP
