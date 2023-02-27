@@ -27,7 +27,7 @@ class Algorithm:
         self.run_history = RunHistory(max_episodes)
         while True:
             self.run_policy()
-            time.sleep(5)
+            time.sleep(2)
 
     def init_new_episode(self, episode:int) -> datetime:
         self.logger.info("-" * 50)

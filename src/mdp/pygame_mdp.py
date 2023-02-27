@@ -32,7 +32,7 @@ class PyGameMDP(MDP):
             pygame.init()
             self.game_clock = pygame.time.Clock()
             self.surface = pygame.display.set_mode((self.width, self.height))
-            self.font_values = pygame.font.Font(pygame.font.get_default_font(), 16)
+            self.font_values = pygame.font.Font(pygame.font.get_default_font(), 14)
             pygame.display.set_caption("PyGame MDP")
 
     def is_quit(self) -> None:
