@@ -1,5 +1,4 @@
 import logging
-import math
 from typing import Dict
 from typing import List
 from typing import Tuple
@@ -25,6 +24,7 @@ PREV = -2
 _logger = logging.getLogger(KNAPSACK_MDP)
 
 class KnapsackData:
+    target:float
     capacity:float
     items:List[Item]
 
@@ -45,12 +45,12 @@ class KnapsackMDP(PyGameMDP):
 
         self.starts = 0
         self.max_value = 0
-        self.max_reward = -math.inf
         
     def init_display(self) -> None:
         super().init_display()
         if self.display:
             self.font_header = pygame.font.Font(pygame.font.get_default_font(), 18)
+            self.font_title = pygame.font.Font(pygame.font.get_default_font(), 26)
 
     def reset(self) -> None:
         self.starts += 1
@@ -111,8 +111,6 @@ class KnapsackMDP(PyGameMDP):
                 is_terminal = self.current_weight == self.data.capacity
             else:
                 is_terminal = True
-            reward = self.current_value
-            self.max_reward = max([self.max_reward, reward])
 
         self.step_result = StepResult()
         self.step_result.is_terminal = is_terminal
@@ -125,47 +123,51 @@ class KnapsackMDP(PyGameMDP):
         padding_horz = 20
         rect_width = 5
         text_margin_x = 10
-        header_margin_y = 40
-        text_box_margin_y = 20
+        header_margin_y = 30
+        text_margin_y = 20
 
-        text_s = f"Episode: {self.starts}"
-        text_x = padding_horz
+        text_s = "RL Agent Maximizing Value"
+        text_x = self.width//2
         text_y = padding_vert
+        text_v = self.font_title.render(text_s, True, BLUE_LIGHT)
+        text_r = text_v.get_rect()
+        text_r.center = (text_x, text_y)
+        self.surface.blit(text_v, text_r)
+        title_text_h = text_v.get_height()
+
+        text_s = f"{self.max_value:.1f}"
+        text_x = padding_horz
+        text_y = padding_vert + title_text_h + header_margin_y
         text_v = self.font_header.render(text_s, True, BLUE_LIGHT)
         text_r = text_v.get_rect()
         text_r.topleft = (text_x, text_y)
         self.surface.blit(text_v, text_r)
-        episode_text_w = text_v.get_width()
-        episode_text_h = text_v.get_height()
 
-        if self.step_result != None and self.step_result.is_terminal:
-            text_s = "TERMINAL"
-            text_x = padding_horz + episode_text_w + text_margin_x
-            text_y = padding_vert
-            text_v = self.font_values.render(text_s, True, BLUE_LIGHT)
-            text_r = text_v.get_rect()
-            text_r.topleft = (text_x, text_y)
-            self.surface.blit(text_v, text_r)
-
-        text_s = f"{self.max_value:.1f}"
+        text_s = f"Episode: {self.starts}"
         text_x = self.width - padding_horz
-        text_y = padding_vert
+        text_y = padding_vert + title_text_h + header_margin_y
         text_v = self.font_header.render(text_s, True, BLUE_LIGHT)
         text_r = text_v.get_rect()
         text_r.topright = (text_x, text_y)
         self.surface.blit(text_v, text_r)
+        header_text_w = text_v.get_width()
+        header_text_h = text_v.get_height()
 
-        padding_top = padding_vert + episode_text_h + header_margin_y
-        gauge_h = self.draw_gauge("Capacity", padding_horz, padding_top, text_box_margin_y, self.current_weight / self.data.capacity, f"{self.current_weight/self.data.capacity:.0%}")
+        if self.step_result != None and self.step_result.is_terminal:
+            text_s = "TERMINAL"
+            text_x = self.width - padding_horz - header_text_w - text_margin_x
+            text_y = padding_vert + title_text_h + header_margin_y
+            text_v = self.font_header.render(text_s, True, BLUE_MEDIUM)
+            text_r = text_v.get_rect()
+            text_r.topright = (text_x, text_y)
+            self.surface.blit(text_v, text_r)
 
-        padding_top = padding_vert + episode_text_h + header_margin_y + gauge_h + text_box_margin_y
-        current_value_pct = self.current_value / self.max_value if self.max_value > 0 else self.current_value
-        gauge_h = self.draw_gauge("Value", padding_horz, padding_top, text_box_margin_y, current_value_pct, f"{self.current_value:.1f}")
-        
-        padding_top = padding_vert + episode_text_h + header_margin_y + ((gauge_h + text_box_margin_y) * 2)
-        current_reward_pct = self.step_result.reward / self.max_reward if self.step_result != None and self.max_reward != 0 else 0
-        reward = self.step_result.reward if self.step_result != None else 0
-        gauge_h = self.draw_gauge("Reward", padding_horz, padding_top, text_box_margin_y, current_reward_pct, f"{reward:.1f}")
+        padding_top = padding_vert + title_text_h + header_margin_y + header_text_h + header_margin_y
+        gauge_h = self.draw_gauge("Capacity", padding_horz, padding_top, text_margin_y, self.current_weight / self.data.capacity, f"{self.current_weight/self.data.capacity:.0%}")
+
+        padding_top = padding_vert + title_text_h + header_margin_y + header_text_h + header_margin_y + gauge_h + text_margin_y
+        value_pct = self.current_value / self.max_value if self.max_value > 0 else self.current_value
+        gauge_h = self.draw_gauge("Value", padding_horz, padding_top, text_margin_y, value_pct, f"{self.current_value:.1f}")
 
         knapsack_p1 = (padding_horz, gauge_cell_height + padding_vert * 3)
         knapsack_p2 = (padding_horz, self.height - padding_vert)
@@ -253,7 +255,9 @@ class KnapsackMDP(PyGameMDP):
         items.append(Item(weight=1.,  value=1.,  name="item-4"))
         items.append(Item(weight=4.,  value=10., name="item-5"))
         capacity = 15
+        target = 32
         data = KnapsackData()
         data.capacity = capacity
+        data.target = target
         data.items = items
         return data
