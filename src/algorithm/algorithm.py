@@ -1,6 +1,8 @@
 import logging
 import time
 from datetime import datetime
+from PIL import Image
+from io import BytesIO
 from typing import DefaultDict
 from typing import List
 
@@ -12,6 +14,9 @@ from model import Transition
 from model import RunHistory
 from registry import Registry
 
+class AlgorithmArgs:
+    record:bool
+
 class Algorithm:
     mdp:MDP
     policy:Policy
@@ -19,9 +24,10 @@ class Algorithm:
     registry:Registry
     run_history:RunHistory
 
-    def __init__(self, name) -> None:
+    def __init__(self, name, args:AlgorithmArgs=None) -> None:
         self.name = name
         self.logger = logging.getLogger(self.name)
+        self.record = args.record if args != None else False
 
     def run(self, max_episodes=0):
         self.run_history = RunHistory(max_episodes)
@@ -77,7 +83,13 @@ class Algorithm:
         while not is_terminal:
             action = self.get_action(state)
 
-            _, next_state, is_terminal, _ = self.mdp.step(action)
+            _, next_state, is_terminal, info = self.mdp.step(action)
+
+            if self.record and INFO_IMAGE_BUFFER in info:
+                image = info[INFO_IMAGE_BUFFER]
+                buffer = BytesIO()
+                image.save(buffer, "PNG")
+                self.registry.write_bytes(self.run_history.run_id, f"{self.run_history.steps}-image.png", buffer)
 
             state = next_state
 

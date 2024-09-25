@@ -28,6 +28,8 @@ EXP_DECAY = "exp"
 EPSILON_GREEDY_EXPLORE = "epsilon-greedy"
 UCB_EXPLORE = "ucb"
 
+INFO_IMAGE_BUFFER = "image-buffer"
+
 BLACK = (  0,   0,   0)
 BLUE  = (  0,   0, 255)
 GREEN = (  0, 255,   0)

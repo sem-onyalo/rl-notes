@@ -9,6 +9,7 @@ matplotlib = "*"
 gym = "*"
 pybullet = "*"
 pygame = "*"
+pillow = "*"
 
 [dev-packages]
 

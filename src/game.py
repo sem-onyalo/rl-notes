@@ -26,6 +26,7 @@ def get_runtime_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--log-level", type=str, default="INFO", help="The logging level to use.")
     parser.add_argument("--plan", action="store_true", help="Build the objects but do not run the agent.")
+    parser.add_argument("--record", action="store_true", help="Save a copy of the actions to disk.")
 
     # registry args
     parser.add_argument("--eval-root", type=str, default="/eval", help="The root directory where training artifacts are written to.")
@@ -104,7 +105,7 @@ def main(args):
     agent_name:str = args.agent
     if agent_name == HUMAN:
         _logger.info("Building agent")
-        agent = Human(mdp)
+        agent = Human(mdp, registry, args)
     elif agent_name in [MONTE_CARLO, Q_LEARNING, Q_NETWORK]:
         if agent_name in [MONTE_CARLO, Q_LEARNING]:
             _logger.info("Builing tabular policy")

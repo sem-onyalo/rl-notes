@@ -1,4 +1,5 @@
 import logging
+from PIL import Image
 from typing import Dict
 from typing import List
 from typing import Tuple
@@ -66,9 +67,11 @@ class KnapsackMDP(PyGameMDP):
         return super().start()
 
     def step(self, action: int) -> Tuple[float, float, bool, Dict[str, object]]:
-        self.update_state(action)
+        is_state_change_action = self.update_state(action)
         self.update_display()
-        return None, None, self.step_result.is_terminal, { "action": action }
+        self.step_result.image_buffer = Image.frombytes("RGBA", self.surface.get_size(), pygame.image.tobytes(self.surface, "RGBA")) if is_state_change_action else None
+        info = self.get_info()
+        return None, None, self.step_result.is_terminal, info
     
     def update_display(self) -> None:
         if self.display:
@@ -78,7 +81,13 @@ class KnapsackMDP(PyGameMDP):
             pygame.display.update()
             self.game_clock.tick(self.fps)
 
-    def update_state(self, action:int) -> None:
+    def get_info(self) -> Dict[str, object]:
+        info = {}
+        if self.step_result.image_buffer != None:
+            info[INFO_IMAGE_BUFFER] = self.step_result.image_buffer
+        return info
+
+    def update_state(self, action:int) -> bool:
         if self.operator == HUMAN:
             action = None
             if self.check_input():
@@ -94,6 +103,7 @@ class KnapsackMDP(PyGameMDP):
         
         reward = 0
         is_terminal = False
+        is_state_change_action = False
         if action == NEXT:
             self.selected_item += 1
             if self.selected_item >= self.n_action:
@@ -103,6 +113,7 @@ class KnapsackMDP(PyGameMDP):
             if self.selected_item < 0:
                 self.selected_item = self.n_action - 1
         elif action != None:
+            is_state_change_action = True
             if self.current_weight + self.data.items[action].weight <= self.data.capacity:
                 self.current_weight += self.data.items[action].weight
                 self.current_value += self.data.items[action].value
@@ -115,6 +126,7 @@ class KnapsackMDP(PyGameMDP):
         self.step_result = StepResult()
         self.step_result.is_terminal = is_terminal
         self.step_result.reward = reward
+        return is_state_change_action
 
     def draw_assets(self) -> None:
         gauge_cell_height = 150
@@ -126,7 +138,7 @@ class KnapsackMDP(PyGameMDP):
         header_margin_y = 30
         text_margin_y = 20
 
-        text_s = "RL Agent Maximizing Value"
+        text_s = "Maximizing Value - Knapsack Problem"
         text_x = self.width//2
         text_y = padding_vert
         text_v = self.font_title.render(text_s, True, BLUE_LIGHT)
